@@ -29,7 +29,9 @@ def cosine_window(N, coeff, sflag):
 
         w = c0 * cos(0 * x) + c1 * cos(1 * x) + c2 * cos(2 * x) + c3 * cos(3 * x) + ...
 
-        Examples of cosine windows implemented below:
+        (Note that the first term simplifies to just the constant value c0.)
+
+        Examples of cosine windows implemented in Matlab:
 
                                     c0          c1           c2           c3            c4
         -------------------------------------------------------------------------------------------
@@ -67,7 +69,7 @@ def cosine_window(N, coeff, sflag):
         # The normal, symmetric form of the window.
         x = np.arange(N) * (2 * np.pi / (N - 1))
     else:
-        # The periodic for. Calculate the window as if it's one element longer, and discard the last element.
+        # The periodic form. Calculate the window as if it's one element longer, and discard the last element.
         x = np.arange(N) * (2 * np.pi / (N    ))
 
     w = np.zeros(N)
@@ -224,7 +226,23 @@ def bohmanwin(L):
     return (1 - x) * np.cos(np.pi * x) + np.sin(np.pi * x) / np.pi
 
 def gausswin(N, Alpha = 2.5):
-    """Gaussian window."""
+    """Gaussian window.
+
+    The parameter for the gausswin() function is different for the Matlab, Octave, and SciPy versions of
+    this function:
+
+    - Matlab uses "Alpha";
+    - Octave uses "A";
+    - Scipy uses "std".
+
+      Matlab vs SciPy:     Alpha * std == (N - 1) / 2
+
+      Matlab vs Octave:    Alpha * N == A * (N - 1)
+
+    In this implementation, we follow the Matlab convention.
+
+    """
+
     # Special case for N == 1, otherwise we'd divide by zero.
     if N <= 1:
         return np.ones(N)

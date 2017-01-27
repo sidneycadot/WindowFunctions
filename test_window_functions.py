@@ -123,7 +123,7 @@ def make_octave_winfunc_map():
     #
     #   * The flattop window is defined differently (a cosine window with slightly different doefficients).
     #   * The Nutall window is defined differently (a cosine window with slightly different doefficients).
-    #   * The Gauss window is defined differently (TO BE INVESTIGATED).
+    #   * The Gauss window is defined differently. The parameter is scaled by a factor M/(M - 1) relative to the equivalant matlab function.
     #   * Octave does not implement the Taylow window.
 
     winfunc_map = OrderedDict()
@@ -143,9 +143,9 @@ def make_octave_winfunc_map():
     winfunc_map[ "flattopwin"               ] = lambda M : window_functions.flattopwin_octave(M)
     winfunc_map[ "flattopwin_periodic"      ] = lambda M : window_functions.flattopwin_octave(M, window_functions.SFlag.PERIODIC)
     winfunc_map[ "flattopwin_symmetric"     ] = lambda M : window_functions.flattopwin_octave(M, window_functions.SFlag.SYMMETRIC)
-    #winfunc_map[ "gausswin"                 ] = lambda M : window_functions.gausswin(M)
-    #winfunc_map[ "gausswin_2p5"             ] = lambda M : window_functions.gausswin(M, 2.5)
-    #winfunc_map[ "gausswin_3p2"             ] = lambda M : window_functions.gausswin(M, 3.2)
+    winfunc_map[ "gausswin"                 ] = lambda M : window_functions.gausswin(M, 2.5 * (M - 1) / M)
+    winfunc_map[ "gausswin_2p5"             ] = lambda M : window_functions.gausswin(M, 2.5 * (M - 1) / M)
+    winfunc_map[ "gausswin_3p2"             ] = lambda M : window_functions.gausswin(M, 3.2 * (M - 1) / M)
     winfunc_map[ "hamming"                  ] = lambda M : window_functions.hamming(M)
     winfunc_map[ "hamming_periodic"         ] = lambda M : window_functions.hamming(M, window_functions.SFlag.PERIODIC)
     winfunc_map[ "hamming_symmetric"        ] = lambda M : window_functions.hamming(M, window_functions.SFlag.SYMMETRIC)
@@ -181,7 +181,7 @@ def check_reference_window_functions(ref_winfuncs, winfunc_map):
                 python_values = python_func(M)
                 err = np.abs(ref_values - python_values)
                 maxerr = max(err) # Maximum error for this window size
-                if maxerr > 1e-12:
+                if maxerr > 1e-13:
                     print("Bad window value: {} M = {} maxerr = {}".format(ref_winfunc_name, M, maxerr))
                     print("ref_values:", ref_values)
                     print("python_values:", python_values)
@@ -193,7 +193,7 @@ def check_reference_window_functions(ref_winfuncs, winfunc_map):
             print("Not found in winfunc_map ...... : {:30}".format(ref_winfunc_name))
     print()
 
-if False:
+if True:
     print()
     print("*** CHECK MATLAB REFERENCE VALUES ***")
     print()
