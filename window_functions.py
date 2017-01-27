@@ -18,7 +18,7 @@ class SFlag:
 ###################################
 
 def cosine_window(N, coeff, sflag):
-    """Generalized cosine window.
+    """ Generalized cosine window.
 
         Many window functions described in signal processing literature
         can be written as linear combinations of cosines over the window length.
@@ -79,7 +79,8 @@ def cosine_window(N, coeff, sflag):
     return w
 
 def rectwin(L):
-    """Rectangular window"""
+    """ Rectangular window
+    """
 
     # Note: this window can also be seen as the simplest of the cosine windows:
     #
@@ -90,7 +91,8 @@ def rectwin(L):
     return np.ones(L) # All values are 1.
 
 def hann(L, sflag = SFlag.SYMMETRIC):
-    """Hann (Hanning) window"""
+    """ Hann window
+    """
 
     # Extrema are 0.
     # Center value is 1 for odd length,
@@ -103,11 +105,13 @@ def hann(L, sflag = SFlag.SYMMETRIC):
     return cosine_window(L, coeff, sflag)
 
 def hamming(L, sflag = SFlag.SYMMETRIC):
-    """Hamming window"""
+    """ Hamming window
+    """
 
-    # Extrema are 0.08.
-    # Center value is 1 for odd length;
-    #   0.54 - 0.46 * cos(pi * L / (L - 1)) for even length.
+    # Note that the Hamming window is raisen; its extreme values are 0.08.
+    #
+    # The center value is 1 for odd length;
+    # The venter values are 0.54 - 0.46 * cos(pi * L / (L - 1)) for even length.
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
@@ -116,7 +120,8 @@ def hamming(L, sflag = SFlag.SYMMETRIC):
     return cosine_window(L, coeff, sflag)
 
 def blackman(N, sflag = SFlag.SYMMETRIC):
-    """Blackman window"""
+    """ Blackman window
+    """
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
@@ -124,17 +129,11 @@ def blackman(N, sflag = SFlag.SYMMETRIC):
 
     return cosine_window(N, [0.42, -0.5, 0.08], sflag)
 
-def blackmanharris(N, sflag = SFlag.SYMMETRIC):
-    """Blackman-Harris window"""
-
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
-    coeff = [0.35875, -0.48829, 0.14128, -0.01168]
-
-    return cosine_window(N, coeff, sflag)
-
 def nuttallwin(N, sflag = SFlag.SYMMETRIC):
-    """Nuttall window"""
+    """ Nuttall window
+
+        Note: very similar to the Blackman-Harris window.
+    """
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
@@ -142,8 +141,20 @@ def nuttallwin(N, sflag = SFlag.SYMMETRIC):
 
     return cosine_window(N, coeff, sflag)
 
+def blackmanharris(N, sflag = SFlag.SYMMETRIC):
+    """ Blackman-Harris window
+
+        Note: very similar to the Nuttall window.
+    """
+
+    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
+
+    coeff = [0.35875, -0.48829, 0.14128, -0.01168]
+
+    return cosine_window(N, coeff, sflag)
+
 def nuttallwin_octave(N, sflag = SFlag.SYMMETRIC):
-    """Nuttall window (Octave version)"""
+    """ Nuttall window (Octave version)"""
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
@@ -152,7 +163,10 @@ def nuttallwin_octave(N, sflag = SFlag.SYMMETRIC):
     return cosine_window(N, coeff, sflag)
 
 def flattopwin(L, sflag = SFlag.SYMMETRIC):
-    """Flattop window"""
+    """ Flattop window
+
+        This window contains negative values.
+    """
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
@@ -161,7 +175,9 @@ def flattopwin(L, sflag = SFlag.SYMMETRIC):
     return cosine_window(L, coeff, sflag)
 
 def flattopwin_octave(L, sflag = SFlag.SYMMETRIC):
-    """Flattop window (Octave version)"""
+    """ Flattop window (Octave version)
+        This window contains negative values.
+    """
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
@@ -176,7 +192,16 @@ def flattopwin_octave(L, sflag = SFlag.SYMMETRIC):
 ##############################
 
 def triang(L):
-    """ Triangular window"""
+    """ Triangular window
+
+        triang(1) == [              1.0              ]
+        triang(2) == [            0.5 0.5            ]
+        triang(3) == [          0.5 1.0 0.5          ]
+        triang(4) == [      0.25 0.75 0.75 0.25      ]
+        triang(5) == [    0.33 0.66 1.0 0.66 0.33    ]
+        triang(6) == [ 0.16 0.50 0.83 0.83 0.50 0.16 ]
+    """
+
     if L % 2 == 0:
         # Even length
         # Center values are (1 - 1 / L); extrema are (1 / L).
@@ -187,7 +212,16 @@ def triang(L):
         return 1 - np.abs(2 * np.arange(L) - (L - 1)) / (L + 1)
 
 def bartlett(L):
-    """Bartlett window"""
+    """ Bartlett window
+
+        bartlett(1) == [           1.0           ]
+        bartlett(2) == [         0.0 0.0         ]
+        bartlett(3) == [       0.0 1.0 0.0       ]
+        bartlett(4) == [    0.0 0.66 0.66 0.0    ]
+        bartlett(5) == [   0.0 0.5 1.0 0.5 0.0   ]
+        bartlett(6) == [ 0.0 0.4 0.8 0.8 0.4 0.0 ]
+    """
+
     # Center value is 1 for odd length, 1 - 1 / (L - 1) for even length.
     # Extrema are 0.
 
