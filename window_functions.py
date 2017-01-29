@@ -408,3 +408,59 @@ def chebwin(L, r = 100.0):
     w /= np.amax(w)
 
     return w
+
+def dft(x):
+    n = len(x)
+    fx = np.zeros(n, np.complex128)
+    for i in range(n):
+        fxi = 0
+        for j in range(n):
+            fxi += np.exp(-float(i * j) / n * 1.j * 2 * np.pi) * x[j]
+        fx[i] = fxi
+    return fx
+
+def chebwin2(L, r = 100.0):
+    """Chebyshev window."""
+
+    # Special case for L == 1, otherwise we'd divide by zero.
+    if L <= 1:
+        return np.ones(L)
+
+    order = L - 1
+
+    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(r) / 20.)))
+
+    x = beta * np.cos(np.pi * np.arange(L) / L)
+
+    # Find the window's DFT coefficients
+    p = np.zeros(L)
+    for i in range(L):
+        if x[i] > 1:
+            p[i] = np.cosh(order * np.arccosh(x[i]))
+        elif x[i] < -1:
+            p[i] = (1 - 2 * (order % 2)) * np.cosh(order * np.arccosh(-x[i]))
+        else:
+            p[i] = np.cos(order * np.arccos(x[i]))
+
+    # Appropriate IDFT and filling up, depending on even/odd length.
+
+    if L % 2 != 0:
+        # Odd length
+        w = np.real(dft(p))
+        #print("@@@", p)
+        #print("@@@", np.fft.fft(p))
+        #print("@@@", dft(p))
+        n = (L + 1) // 2
+        w = w[:n]
+        w = np.concatenate((w[n - 1:0:-1], w))
+    else:
+        # Even length
+        p = p * np.exp(1.j * np.pi / L * np.arange(L))
+        w = np.real(dft(p))
+        n = L // 2 + 1
+        w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+
+    # Normalize window so the maximum value is 1.
+    w /= np.amax(w)
+
+    return w
