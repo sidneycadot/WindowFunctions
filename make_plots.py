@@ -18,7 +18,6 @@ def plot_cosine_windows(n):
     plt.plot(wf.flattopwin_octave(n), label = "flattopwin (octave)")
     plt.ylim(None, 1.2)
     plt.legend()
-    plt.show()
 
 def plot_chebyshev_windows(n):
 
@@ -49,14 +48,28 @@ def plot_gaussian_windows(n):
         plt.plot(wf.gausswin(n, alpha), label = "alpha = {:.2f}".format(alpha))
     plt.legend()
 
+def plot_misc_windows(n):
+
+    plt.title("misc windows")
+    plt.plot(wf.triang(n), label = "triang")
+    plt.plot(wf.bartlett(n), label = "bartlett")
+    plt.plot(wf.barthannwin(n), label = "barthannwin")
+    plt.plot(wf.bohmanwin(n), label = "bohmanwin")
+    plt.plot(wf.taylorwin(n), label = "taylorwin")
+    plt.legend()
+
 n = 1000
 plt.subplot(321)
-plot_chebyshev_windows(n)
+plot_cosine_windows(n)
 plt.subplot(322)
-plot_kaiser_windows(n)
+plot_chebyshev_windows(n)
 plt.subplot(323)
-plot_tukey_windows(n)
+plot_kaiser_windows(n)
 plt.subplot(324)
+plot_tukey_windows(n)
+plt.subplot(325)
 plot_gaussian_windows(n)
+plt.subplot(326)
+plot_misc_windows(n)
 plt.show()
 
