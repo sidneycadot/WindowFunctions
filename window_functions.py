@@ -350,12 +350,10 @@ def taylorwin(n, nbar = 4, sll = -30.0):
 
     return w
 
-def bessel_i0(x):
-    import scipy.special
-    return scipy.special.i0(x)
-
 def kaiser(L, beta = 0.5):
     """Kaiser window."""
+
+    from bessel_i0 import bessel_i0
 
     # Special case for L == 1, otherwise we'd divide by zero.
     if L <= 1:
