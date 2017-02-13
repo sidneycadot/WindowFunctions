@@ -1,8 +1,13 @@
 
+# This implementation was derived from the Cephes Math Library implementation:
+#
+#    Cephes Math Library Release 2.8:  June, 2000
+#    Copyright 1984, 1987, 2000 by Stephen L. Moshier
+
 import numpy as np
 
 def chbevl(x, coeff):
-    """ Evaluate chebyshev polynomial at 'x'
+    """ Evaluate Chebyshev polynomial at 'x'
     """
 
     n = len(coeff)

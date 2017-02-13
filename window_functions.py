@@ -108,7 +108,7 @@ def hamming(L, sflag = SFlag.SYMMETRIC):
     """ Hamming window
     """
 
-    # Note that the Hamming window is raisen; its extreme values are 0.08.
+    # Note that the Hamming window is raised; its extreme values are 0.08.
     #
     # The center value is 1 for odd length;
     # The venter values are 0.54 - 0.46 * cos(pi * L / (L - 1)) for even length.
@@ -129,18 +129,6 @@ def blackman(N, sflag = SFlag.SYMMETRIC):
 
     return cosine_window(N, [0.42, -0.5, 0.08], sflag)
 
-def nuttallwin(N, sflag = SFlag.SYMMETRIC):
-    """ Nuttall window
-
-        Note: very similar to the Blackman-Harris window.
-    """
-
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
-    coeff = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
-
-    return cosine_window(N, coeff, sflag)
-
 def blackmanharris(N, sflag = SFlag.SYMMETRIC):
     """ Blackman-Harris window
 
@@ -150,6 +138,18 @@ def blackmanharris(N, sflag = SFlag.SYMMETRIC):
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
     coeff = [0.35875, -0.48829, 0.14128, -0.01168]
+
+    return cosine_window(N, coeff, sflag)
+
+def nuttallwin(N, sflag = SFlag.SYMMETRIC):
+    """ Nuttall window
+
+        Note: very similar to the Blackman-Harris window.
+    """
+
+    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
+
+    coeff = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
 
     return cosine_window(N, coeff, sflag)
 
@@ -181,7 +181,7 @@ def flattopwin_octave(L, sflag = SFlag.SYMMETRIC):
 
     assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
-    coeff = [1 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
+    coeff = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
 
     return cosine_window(L, coeff, sflag)
 
@@ -203,12 +203,12 @@ def triang(L):
     """
 
     if L % 2 == 0:
-        # Even length
+        # Even length:
         # Center values are (1 - 1 / L); extrema are (1 / L).
         return 1 - np.abs(2 * np.arange(L) - (L - 1)) / (L    )
     else:
-        # Odd length
-        # Center value is 1; extrema are 2 / (L + 1)
+        # Odd length:
+        # Center value is 1; extrema are 2 / (L + 1).
         return 1 - np.abs(2 * np.arange(L) - (L - 1)) / (L + 1)
 
 def bartlett(L):
@@ -319,7 +319,7 @@ def tukeywin(L, r = 0.5):
 
     return (np.cos(np.maximum(np.abs(np.arange(L) - (L - 1) / 2) * (2 / (L - 1) / r)  - (1 / r - 1), 0) * np.pi) + 1) / 2
 
-def taylorwin(n, nbar = 4, sll = -30.0):
+def taylorwin_original(n, nbar = 4, sll = -30.0):
     """Taylor window."""
 
     a = np.arccosh(10 ** (-sll / 20.0)) / np.pi
@@ -333,20 +333,55 @@ def taylorwin(n, nbar = 4, sll = -30.0):
 
     for m in range(1, nbar):
 
-        Num = 1.0
-        for i in range(1, nbar):
-            Num *= (1 - m ** 2 / sp2 / (a ** 2 + (i - 0.5) ** 2))
+        sign = +1 if (m % 2 != 0) else -1
 
-        Den = 1.0
+        numerator = 1.0
+        for i in range(1, nbar):
+            numerator *= (1 - m ** 2 / sp2 / (a ** 2 + (i - 0.5) ** 2))
+
+        denominator = 1.0
         for i in range(1, nbar):
             if i != m:
-                Den *= (1 - m**2 / i**2)
+                denominator *= (1 - m ** 2 / i ** 2)
 
-        Fm = ((-1) ** (m + 1) * Num) / (2 * Den)
+        Fm = sign * numerator / denominator
 
-        summation = Fm * np.cos(2 * np.pi * m * xi) + summation
+        summation += Fm * np.cos(2 * np.pi * m * xi)
 
-    w = np.ones(n) + 2 * summation
+    w = np.ones(n) + summation
+
+    return w
+
+def taylorwin(n, nbar = 4, sll = -30.0):
+    """Taylor window."""
+
+    a = np.arccosh(10 ** (-sll / 20.0)) / np.pi
+
+    a2 = a * a
+
+    # Taylor pulse widening (dilation) factor.
+    sp2 = (nbar ** 2) / (a2 + (nbar - 0.5) ** 2)
+
+    summation = 0
+
+    x = (np.arange(n) + 0.5)  / n
+
+    for m in range(1, nbar):
+
+        # Calculate Fm as a function of: m, sp2, a
+
+        numerator = 1.0
+        denominator = 1.0
+        for i in range(1, nbar):
+            numerator       *= (1 - m ** 2 / (sp2 * (a2 + (i - 0.5) ** 2)))
+            if i != m:
+                denominator *= (1 - m ** 2 / i ** 2)
+
+        Fm = -(numerator / denominator)
+
+        summation += Fm * np.cos(2 * np.pi * m * x)
+
+    w = np.ones(n) + summation
 
     return w
 
@@ -359,9 +394,9 @@ def kaiser(L, beta = 0.5):
     if L <= 1:
         return np.ones(L)
 
-    n = np.arange(0, L)
-    alpha = (L - 1) / 2.0
-    w = (bessel_i0(beta * np.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) / bessel_i0(beta))
+    x = (2 * np.arange(L) - (L - 1)) / (L - 1)
+
+    w = (bessel_i0(beta * np.sqrt(1 - x * x)) / bessel_i0(beta))
     return w
 
 def chebwin(L, r = 100.0):
@@ -445,9 +480,6 @@ def chebwin2(L, r = 100.0):
     if L % 2 != 0:
         # Odd length
         w = np.real(dft(p))
-        #print("@@@", p)
-        #print("@@@", np.fft.fft(p))
-        #print("@@@", dft(p))
         n = (L + 1) // 2
         w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
