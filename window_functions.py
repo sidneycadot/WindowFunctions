@@ -164,7 +164,8 @@ def flattopwin(L, sflag = True):
 
 def flattopwin_octave(L, sflag = True):
     """ Flattop window (Octave version)
-        This window contains negative values.
+
+        Note: this window contains negative values.
     """
 
     coeff = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
@@ -224,7 +225,8 @@ def bartlett(L):
 #########################
 
 def barthannwin(L):
-    """Modified Bartlett-Hann window."""
+    """ Modified Bartlett-Hann window.
+    """
 
     # Special case for L == 1, otherwise we'd divide by zero.
     if L <= 1:
@@ -235,7 +237,8 @@ def barthannwin(L):
     return 0.62 - 0.48 * x + 0.38 * np.cos(2 * np.pi * x)
 
 def bohmanwin(L):
-    """Bohmann window."""
+    """Bohmann window.
+    """
 
     # Special case for L == 1, otherwise we'd divide by zero.
     if L <= 1:
@@ -246,21 +249,20 @@ def bohmanwin(L):
     return (1 - x) * np.cos(np.pi * x) + np.sin(np.pi * x) / np.pi
 
 def gausswin(N, Alpha = 2.5):
-    """Gaussian window.
+    """ Gaussian window.
 
-    The parameter for the gausswin() function is different for the Matlab, Octave, and SciPy versions of
-    this function:
+        The parameter for the gausswin() function is different for the Matlab, Octave,
+        and SciPy versions of this function:
 
-    - Matlab uses "Alpha";
-    - Octave uses "A";
-    - Scipy uses "std".
+        - Matlab uses "Alpha";
+        - Octave uses "A";
+        - Scipy uses "std".
 
-      Matlab vs SciPy:     Alpha * std == (N - 1) / 2
+        Matlab vs SciPy:     Alpha * std == (N - 1) / 2
 
-      Matlab vs Octave:    Alpha * N == A * (N - 1)
+        Matlab vs Octave:    Alpha * N == A * (N - 1)
 
-    In this implementation, we follow the Matlab convention.
-
+        In this implementation, we follow the Matlab convention.
     """
 
     # Special case for N == 1, otherwise we'd divide by zero.
@@ -272,11 +274,14 @@ def gausswin(N, Alpha = 2.5):
     return np.exp( -0.5 * (Alpha * x) ** 2)
 
 def parzenwin(L):
-    """The Parzen window.
+    """ Parzen window.
 
-       This is an approximation of the Gaussian window.
-       The Gaussian shape is approximated by two different polynomials, one for x < 0.5 and one for x > 0.5.
-       At x == 0.5, the polynomials meet. The minimum value of the two polynomials is taken.
+        This is an approximation of the Gaussian window.
+
+        The Gaussian shape is approximated by two different polynomials,
+        one for x < 0.5 and one for x > 0.5. At x == 0.5, the polynomials meet.
+
+        The minimum value of the two polynomials is taken.
     """
 
     x = np.abs(2 * np.arange(L) - (L - 1)) / L
@@ -284,13 +289,13 @@ def parzenwin(L):
     return np.minimum(1 - 6 * x * x + 6 * x * x * x, 2 * (1 - x) ** 3)
 
 def tukeywin(L, r = 0.5):
-    """Tukey window.
+    """ Tukey window.
 
-       This window uses a cosine-shaped ramp-up and ramp-down, with an all-one part in the middle.
-       The parameter 'r' defines the fraction of the window covered by the ramp-up and ramp-down.
+        This window uses a cosine-shaped ramp-up and ramp-down, with an all-one part in the middle.
+        The parameter 'r' defines the fraction of the window covered by the ramp-up and ramp-down.
 
-       r <= 0 is identical to a rectangular window.
-       r >= 1 is identical to a Hann window.
+        r <= 0 is identical to a rectangular window.
+        r >= 1 is identical to a Hann window.
     """
 
     # Special case for L == 1, otherwise we'd divide by zero.
@@ -306,7 +311,8 @@ def tukeywin(L, r = 0.5):
     return (np.cos(np.maximum(np.abs(np.arange(L) - (L - 1) / 2) * (2 / (L - 1) / r)  - (1 / r - 1), 0) * np.pi) + 1) / 2
 
 def taylorwin(n, nbar = 4, sll = -30.0):
-    """Taylor window."""
+    """ Taylor window.
+    """
 
     a = np.arccosh(10 ** (-sll / 20.0)) / np.pi
 
@@ -315,9 +321,9 @@ def taylorwin(n, nbar = 4, sll = -30.0):
     # Taylor pulse widening (dilation) factor.
     sp2 = (nbar ** 2) / (a2 + (nbar - 0.5) ** 2)
 
-    summation = 0
+    w = np.ones(n)
 
-    x = (np.arange(n) + 0.5)  / n
+    x = (np.arange(n) + 0.5) / n
 
     for m in range(1, nbar):
 
@@ -326,20 +332,19 @@ def taylorwin(n, nbar = 4, sll = -30.0):
         numerator = 1.0
         denominator = 1.0
         for i in range(1, nbar):
-            numerator       *= (1 - m ** 2 / (sp2 * (a2 + (i - 0.5) ** 2)))
+            numerator       *= (1.0 - m ** 2 / (sp2 * (a2 + (i - 0.5) ** 2)))
             if i != m:
-                denominator *= (1 - m ** 2 / i ** 2)
+                denominator *= (1.0 - m ** 2 / i ** 2)
 
         Fm = -(numerator / denominator)
 
-        summation += Fm * np.cos(2 * np.pi * m * x)
-
-    w = np.ones(n) + summation
+        w += Fm * np.cos(2 * np.pi * m * x)
 
     return w
 
 def kaiser(L, beta = 0.5):
-    """Kaiser window."""
+    """ Kaiser window.
+    """
 
     from bessel_i0 import bessel_i0
 
@@ -353,7 +358,8 @@ def kaiser(L, beta = 0.5):
     return w
 
 def chebwin(L, r = 100.0):
-    """Chebyshev window."""
+    """ Chebyshev window.
+    """
 
     # Special case for L == 1, otherwise we'd divide by zero.
     if L <= 1:
@@ -406,7 +412,8 @@ def dft(x):
     return fx
 
 def chebwin2(L, r = 100.0):
-    """Chebyshev window."""
+    """ Chebyshev window.
+    """
 
     # Special case for L == 1, otherwise we'd divide by zero.
     if L <= 1:

@@ -3,214 +3,286 @@
 // test_window_functions.c //
 /////////////////////////////
 
+// TODO: add support for Taylor windows.
+// TODO: add support for Chebyshev windows.
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
+#include <assert.h>
 #include <math.h>
 
 #include "window_functions.h"
 
-#define MAX_WINDOW_NAME_SIZE 100
-
-static double * init_window(const char * window_name, unsigned n)
+enum reference_source_t // Where did we obtain these reference values?
 {
-    double * w = NULL;
+    MATLAB = 101,
+    OCTAVE = 102
+};
 
+static int init_window(const char * window_name, enum reference_source_t reference, double * w, unsigned n)
+{
     if (strcmp(window_name, "rectwin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         rectwin(w, n);
     }
     else if (strcmp(window_name, "hann") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         hann(w, n, true);
     }
     else if (strcmp(window_name, "hann_periodic") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         hann(w, n, false);
     }
     else if (strcmp(window_name, "hann_symmetric") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         hann(w, n, true);
     }
     else if (strcmp(window_name, "hamming") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         hamming(w, n, true);
     }
     else if (strcmp(window_name, "hamming_periodic") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         hamming(w, n, false);
     }
     else if (strcmp(window_name, "hamming_symmetric") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         hamming(w, n, true);
     }
     else if (strcmp(window_name, "blackman") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         blackman(w, n, true);
     }
     else if (strcmp(window_name, "blackman_periodic") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         blackman(w, n, false);
     }
     else if (strcmp(window_name, "blackman_symmetric") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         blackman(w, n, true);
     }
     else if (strcmp(window_name, "blackmanharris") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         blackmanharris(w, n, true);
     }
     else if (strcmp(window_name, "blackmanharris_periodic") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         blackmanharris(w, n, false);
     }
     else if (strcmp(window_name, "blackmanharris_symmetric") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         blackmanharris(w, n, true);
     }
     else if (strcmp(window_name, "nuttallwin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        nuttallwin(w, n, true);
+        switch (reference)
+        {
+            case MATLAB: nuttallwin(w, n, true); break;
+            case OCTAVE: nuttallwin_octave(w, n, true); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "nuttallwin_periodic") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        nuttallwin(w, n, false);
+        switch (reference)
+        {
+            case MATLAB: nuttallwin(w, n, false); break;
+            case OCTAVE: nuttallwin_octave(w, n, false); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "nuttallwin_symmetric") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        nuttallwin(w, n, true);
+        switch (reference)
+        {
+            case MATLAB: nuttallwin(w, n, true); break;
+            case OCTAVE: nuttallwin_octave(w, n, true); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "flattopwin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        flattopwin(w, n, true);
+        switch (reference)
+        {
+            case MATLAB: flattopwin(w, n, true); break;
+            case OCTAVE: flattopwin_octave(w, n, true); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "flattopwin_periodic") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        flattopwin(w, n, false);
+        switch (reference)
+        {
+            case MATLAB: flattopwin(w, n, false); break;
+            case OCTAVE: flattopwin_octave(w, n, false); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "flattopwin_symmetric") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        flattopwin(w, n, true);
+        switch (reference)
+        {
+            case MATLAB: flattopwin(w, n, true); break;
+            case OCTAVE: flattopwin_octave(w, n, true); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "triang") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         triang(w, n);
     }
     else if (strcmp(window_name, "bartlett") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         bartlett(w, n);
     }
     else if (strcmp(window_name, "barthannwin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         barthannwin(w, n);
     }
     else if (strcmp(window_name, "bohmanwin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         bohmanwin(w, n);
     }
     else if (strcmp(window_name, "parzenwin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         parzenwin(w, n);
     }
     else if (strcmp(window_name, "gausswin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        gausswin(w, n, 2.5);
+        switch (reference)
+        {
+            case MATLAB: gausswin(w, n, 2.5); break;
+            case OCTAVE: gausswin(w, n, 2.5 * (n - 1) / n); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "gausswin_2p5") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        gausswin(w, n, 2.5);
+        switch (reference)
+        {
+            case MATLAB: gausswin(w, n, 2.5); break;
+            case OCTAVE: gausswin(w, n, 2.5 * (n - 1) / n); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "gausswin_3p2") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
-        gausswin(w, n, 3.2);
+        switch (reference)
+        {
+            case MATLAB: gausswin(w, n, 3.2); break;
+            case OCTAVE: gausswin(w, n, 3.2 * (n - 1) / n); break;
+            default: assert(false);
+        }
     }
     else if (strcmp(window_name, "tukeywin") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         tukeywin(w, n, 0.5);
     }
     else if (strcmp(window_name, "tukeywin_0p0") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         tukeywin(w, n, 0.0);
     }
     else if (strcmp(window_name, "tukeywin_0p2") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         tukeywin(w, n, 0.2);
     }
     else if (strcmp(window_name, "tukeywin_0p5") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         tukeywin(w, n, 0.5);
     }
     else if (strcmp(window_name, "tukeywin_0p8") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         tukeywin(w, n, 0.8);
     }
     else if (strcmp(window_name, "tukeywin_1p0") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         tukeywin(w, n, 1.0);
+    }
+    else if (strcmp(window_name, "taylorwin") == 0)
+    {
+        taylorwin(w, n, 4, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_4") == 0)
+    {
+        taylorwin(w, n, 4, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_4_m20") == 0)
+    {
+        taylorwin(w, n, 4, -20.0);
+    }
+    else if (strcmp(window_name, "taylorwin_4_m30") == 0)
+    {
+        taylorwin(w, n, 4, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_4_m40") == 0)
+    {
+        taylorwin(w, n, 4, -40.0);
+    }
+    else if (strcmp(window_name, "taylorwin_5") == 0)
+    {
+        taylorwin(w, n, 5, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_5_m20") == 0)
+    {
+        taylorwin(w, n, 5, -20.0);
+    }
+    else if (strcmp(window_name, "taylorwin_5_m30") == 0)
+    {
+        taylorwin(w, n, 5, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_5_m40") == 0)
+    {
+        taylorwin(w, n, 5, -40.0);
+    }
+    else if (strcmp(window_name, "taylorwin_6") == 0)
+    {
+        taylorwin(w, n, 6, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_6_m20") == 0)
+    {
+        taylorwin(w, n, 6, -20.0);
+    }
+    else if (strcmp(window_name, "taylorwin_6_m30") == 0)
+    {
+        taylorwin(w, n, 6, -30.0);
+    }
+    else if (strcmp(window_name, "taylorwin_6_m40") == 0)
+    {
+        taylorwin(w, n, 6, -40.0);
     }
     else if (strcmp(window_name, "kaiser") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         kaiser(w, n, 0.5);
     }
     else if (strcmp(window_name, "kaiser_0p5") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         kaiser(w, n, 0.5);
     }
     else if (strcmp(window_name, "kaiser_0p8") == 0)
     {
-        w = (double *)malloc(sizeof(double) * n);
         kaiser(w, n, 0.8);
     }
+    else
+    {
+        return -1; // Window name not handled.
+    }
 
-    return w;
+    return 0;
 }
 
-int main()
+void check_reference_file(const char * filename, enum reference_source_t reference)
 {
-    const char * filename = "reference/matlab_windows.txt";
+    const unsigned MAX_WINDOW_NAME_SIZE = 100;
+    const unsigned MAX_WINDOW_SIZE      = 100;
+
+    char     current_window_name[MAX_WINDOW_NAME_SIZE];
+    unsigned current_window_n = 0;
+    double   current_window[MAX_WINDOW_SIZE];
+
+    current_window_name[0] = '\0';
 
     FILE * f = fopen(filename, "r");
-
-    char     current_window_name[MAX_WINDOW_NAME_SIZE] = "";
-    unsigned current_window_n                          = 0;
-    double * current_window                            = NULL;
-
     for (;;)
     {
         char window_name[MAX_WINDOW_NAME_SIZE];
@@ -224,22 +296,19 @@ int main()
             break;
         }
 
-        bool current_window_ok = (current_window != NULL && strcmp(current_window_name, window_name) == 0 && current_window_n == n);
+        bool current_window_ok = (strcmp(current_window_name, window_name) == 0 && current_window_n == n);
 
         if (!current_window_ok)
         {
-            double * calculated_window = init_window(window_name, n);
-            if (calculated_window == NULL)
+            assert(n <= MAX_WINDOW_SIZE);
+            result = init_window(window_name, reference, current_window, n);
+            if (result != 0)
             {
-                printf("WARNING: cannot init window \"%s\" with n == %u\n", window_name, n);
+                printf("WARNING: cannot init window \"%s\" (reference = %d), with n == %u\n", window_name, reference, n);
             }
             else
             {
                 strcpy(current_window_name, window_name);
-
-                free(current_window);
-
-                current_window    = calculated_window;
                 current_window_n  = n;
                 current_window_ok = true;
             }
@@ -257,7 +326,13 @@ int main()
         }
     }
 
-    free(current_window);
-
     fclose(f);
+}
+
+int main()
+{
+    check_reference_file("reference/matlab_windows.txt", MATLAB);
+    check_reference_file("reference/octave_windows.txt", OCTAVE);
+
+    return 0;
 }

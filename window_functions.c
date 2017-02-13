@@ -362,6 +362,60 @@ void tukeywin(double * w, unsigned n, double r)
     }
 }
 
+static inline double sq(double x)
+{
+    return x * x;
+}
+
+void taylorwin(double * w, unsigned n, unsigned nbar, double sll)
+{
+    // Taylor window.
+    //
+    // Default Matlab parameters: nbar ==4, sll == -30.0.
+    //
+    // The Taylor window is cosine-window like, in that it is the sum of weighted
+    // cosines of different periods.
+
+    const double a = acosh(pow(10.0, (-sll / 20.0))) / M_PI;
+
+    const double a2 = sq(a);
+
+    // Taylor pulse widening (dilation) factor.
+
+    const double sp2 = sq(nbar) / (a2 + sq(nbar - 0.5));
+
+    for (unsigned i = 0; i < n; ++i)
+    {
+        w[i] = 1.0; // Initial value.
+    }
+
+    for (unsigned m = 1; m < nbar; ++m)
+    {
+        // Calculate Fm as a function of: m, sp2, a
+
+        double numerator = 1.0;
+        double denominator = 1.0;
+
+        for (unsigned i = 1; i < nbar; ++i)
+        {
+            numerator *= (1.0 - sq(m) / (sp2 * (a2 + sq(i - 0.5))));
+            if (i != m)
+            {
+                denominator *= (1.0 - sq(m) / sq(i));
+            }
+        }
+
+        const double Fm = -(numerator / denominator);
+
+        // Add cosine term to each of the window components.
+
+        for (unsigned i = 0; i < n; ++i)
+        {
+            const double x = 2 * M_PI * (i + 0.5) / n;
+            w[i] += Fm * cos(m * x);
+        }
+    }
+}
 
 static double chbevl(double x, const double * coeff, unsigned n)
 {
