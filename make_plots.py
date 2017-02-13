@@ -3,6 +3,7 @@
 import window_functions as wf
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 
 def plot_cosine_windows(n):
 
@@ -43,33 +44,47 @@ def plot_tukey_windows(n):
 def plot_gaussian_windows(n):
 
     plt.title("gaussian windows")
-    plt.plot(wf.parzenwin(n), lw = 5, label = "parzenwin")
-    for alpha in [0.5, 1.0, 2.0, 3.3, 5.0, 10.0]:
+    for alpha in [0.5, 1.0, 2.0, 5.0, 10.0]:
         plt.plot(wf.gausswin(n, alpha), label = "alpha = {:.2f}".format(alpha))
     plt.legend()
 
-def plot_misc_windows(n):
+def plot_triangular_windows(n):
 
-    plt.title("misc windows")
+    plt.title("triangular windows")
     plt.plot(wf.triang(n), label = "triang")
     plt.plot(wf.bartlett(n), label = "bartlett")
-    plt.plot(wf.barthannwin(n), label = "barthannwin")
-    plt.plot(wf.bohmanwin(n), label = "bohmanwin")
-    plt.plot(wf.taylorwin(n), label = "taylorwin")
     plt.legend()
 
-n = 1000
-plt.subplot(321)
-plot_cosine_windows(n)
-plt.subplot(322)
-plot_chebyshev_windows(n)
-plt.subplot(323)
-plot_kaiser_windows(n)
-plt.subplot(324)
-plot_tukey_windows(n)
-plt.subplot(325)
-plot_gaussian_windows(n)
-plt.subplot(326)
-plot_misc_windows(n)
-plt.show()
+def plot_miscellaneous_windows(n):
 
+    plt.title("miscellaneous windows")
+    plt.plot(wf.taylorwin(n), label = "taylorwin")
+    plt.plot(wf.barthannwin(n), label = "barthannwin")
+    plt.plot(wf.bohmanwin(n), label = "bohmanwin")
+    plt.plot(wf.parzenwin(n), label = "parzenwin")
+    plt.legend()
+
+n = 201
+
+with PdfPages('windows.pdf') as pdf:
+    plot_cosine_windows(n)
+    pdf.savefig()
+    plt.close()
+    plot_chebyshev_windows(n)
+    pdf.savefig()
+    plt.close()
+    plot_kaiser_windows(n)
+    pdf.savefig()
+    plt.close()
+    plot_tukey_windows(n)
+    pdf.savefig()
+    plt.close()
+    plot_gaussian_windows(n)
+    pdf.savefig()
+    plt.close()
+    plot_triangular_windows(n)
+    pdf.savefig()
+    plt.close()
+    plot_miscellaneous_windows(n)
+    pdf.savefig()
+    plt.close()

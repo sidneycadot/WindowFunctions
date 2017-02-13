@@ -18,4 +18,3 @@ ref = np.array([0.0519, 0.2271, 0.5379, 0.8605, 1.0000, 0.8605, 0.5379, 0.2271, 
 
 print("reference value check:", (np.abs(ref-w) < 5e-5).all())
 print()
-

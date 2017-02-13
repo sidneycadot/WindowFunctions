@@ -1,15 +1,15 @@
 
 import numpy as np
-from enum import Enum
 
 # These functions aim to reproduce the behavior of the Matlab functions with the same name.
 
 # The implementations below use only basic NumPy functions; the aim is to have reference implementations
 # from which we can easily derive a C implementation.
-
-class SFlag:
-    SYMMETRIC = 1
-    PERIODIC  = 2
+#
+# There are two window types for which this is somewhat tricky:
+#
+# - The Kaiser window depends on the ability to calculate the modified Bessel function of the first kind I0(x).
+# - The Chebyshev window depends on the ability top perform a Discrete Fourier Transform (DFT).
 
 ###################################
 #                                 #
@@ -17,7 +17,7 @@ class SFlag:
 #                                 #
 ###################################
 
-def cosine_window(N, coeff, sflag):
+def cosine_window(N, coeff, sflag = True):
     """ Generalized cosine window.
 
         Many window functions described in signal processing literature
@@ -59,13 +59,11 @@ def cosine_window(N, coeff, sflag):
                  [0.355768, -0.487396, 0.144232, -0.012604]
     """
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
     # Special case for N == 1, otherwise we'd divide by zero.
     if N <= 1:
         return np.ones(N)
 
-    if sflag == SFlag.SYMMETRIC:
+    if sflag:
         # The normal, symmetric form of the window.
         x = np.arange(N) * (2 * np.pi / (N - 1))
     else:
@@ -84,13 +82,13 @@ def rectwin(L):
 
     # Note: this window can also be seen as the simplest of the cosine windows:
     #
-    #    return cosine_window(L, [1.0], SFlag.SYMMETRIC)
+    #    return cosine_window(L, [1.0], True)
     #
     # Of course, the implementation given below is faster.
 
     return np.ones(L) # All values are 1.
 
-def hann(L, sflag = SFlag.SYMMETRIC):
+def hann(L, sflag = True):
     """ Hann window
     """
 
@@ -98,13 +96,11 @@ def hann(L, sflag = SFlag.SYMMETRIC):
     # Center value is 1 for odd length,
     #     0.5 - 0.5 * cos(pi * L / (L - 1)) for even length.
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
     coeff = [0.5, -0.5]
 
     return cosine_window(L, coeff, sflag)
 
-def hamming(L, sflag = SFlag.SYMMETRIC):
+def hamming(L, sflag = True):
     """ Hamming window
     """
 
@@ -113,73 +109,63 @@ def hamming(L, sflag = SFlag.SYMMETRIC):
     # The center value is 1 for odd length;
     # The venter values are 0.54 - 0.46 * cos(pi * L / (L - 1)) for even length.
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
     coeff = [0.54, -0.46]
 
     return cosine_window(L, coeff, sflag)
 
-def blackman(N, sflag = SFlag.SYMMETRIC):
+def blackman(N, sflag = True):
     """ Blackman window
     """
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
     coeff = [0.42, -0.5, 0.08]
 
-    return cosine_window(N, [0.42, -0.5, 0.08], sflag)
+    return cosine_window(N, coeff, sflag)
 
-def blackmanharris(N, sflag = SFlag.SYMMETRIC):
+def blackmanharris(N, sflag = True):
     """ Blackman-Harris window
 
         Note: very similar to the Nuttall window.
     """
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
     coeff = [0.35875, -0.48829, 0.14128, -0.01168]
 
     return cosine_window(N, coeff, sflag)
 
-def nuttallwin(N, sflag = SFlag.SYMMETRIC):
+def nuttallwin(N, sflag = True):
     """ Nuttall window
 
         Note: very similar to the Blackman-Harris window.
     """
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
-
     coeff = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
 
     return cosine_window(N, coeff, sflag)
 
-def nuttallwin_octave(N, sflag = SFlag.SYMMETRIC):
-    """ Nuttall window (Octave version)"""
 
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
+    return cosine_window(N, coeff, sflag)
+
+def nuttallwin_octave(N, sflag = True):
+    """ Nuttall window (Octave version)
+    """
 
     coeff = [0.355768, -0.487396, 0.144232, -0.012604]
 
     return cosine_window(N, coeff, sflag)
 
-def flattopwin(L, sflag = SFlag.SYMMETRIC):
+def flattopwin(L, sflag = True):
     """ Flattop window
 
-        This window contains negative values.
+        Note: this window contains negative entries!
     """
-
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
     coeff = [0.21557895, -0.41663158, 0.277263158, -0.083578947, 0.006947368]
 
     return cosine_window(L, coeff, sflag)
 
-def flattopwin_octave(L, sflag = SFlag.SYMMETRIC):
+def flattopwin_octave(L, sflag = True):
     """ Flattop window (Octave version)
         This window contains negative values.
     """
-
-    assert sflag in [SFlag.SYMMETRIC, SFlag.PERIODIC]
 
     coeff = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
 
@@ -318,39 +304,6 @@ def tukeywin(L, r = 0.5):
         return np.ones(L)
 
     return (np.cos(np.maximum(np.abs(np.arange(L) - (L - 1) / 2) * (2 / (L - 1) / r)  - (1 / r - 1), 0) * np.pi) + 1) / 2
-
-def taylorwin_original(n, nbar = 4, sll = -30.0):
-    """Taylor window."""
-
-    a = np.arccosh(10 ** (-sll / 20.0)) / np.pi
-
-    # Taylor pulse widening (dilation) factor.
-    sp2 = (nbar ** 2) / (a ** 2 + (nbar - 0.5) ** 2)
-
-    summation = 0
-
-    xi = (np.arange(n) - ((n - 1) / 2))  / n
-
-    for m in range(1, nbar):
-
-        sign = +1 if (m % 2 != 0) else -1
-
-        numerator = 1.0
-        for i in range(1, nbar):
-            numerator *= (1 - m ** 2 / sp2 / (a ** 2 + (i - 0.5) ** 2))
-
-        denominator = 1.0
-        for i in range(1, nbar):
-            if i != m:
-                denominator *= (1 - m ** 2 / i ** 2)
-
-        Fm = sign * numerator / denominator
-
-        summation += Fm * np.cos(2 * np.pi * m * xi)
-
-    w = np.ones(n) + summation
-
-    return w
 
 def taylorwin(n, nbar = 4, sll = -30.0):
     """Taylor window."""
