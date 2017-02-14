@@ -314,7 +314,14 @@ def taylorwin(n, nbar = 4, sll = -30.0):
     """ Taylor window.
     """
 
-    a = np.arccosh(10 ** (-sll / 20.0)) / np.pi
+    # sll is in dB(power).
+    # Calculate the amplification factor, e.g. sll = -60 --> amplification = 1000.0
+
+    # Amplification will be >= 1.0.
+    amplification = 10 ** (abs(sll) / 20.0)
+
+    # Which is convenient, since arccosh(x) is only real-valued for (x >= 1).
+    a = np.arccosh(amplification) / np.pi
 
     a2 = a * a
 
@@ -357,6 +364,19 @@ def kaiser(L, beta = 0.5):
     w = (bessel_i0(beta * np.sqrt(1 - x * x)) / bessel_i0(beta))
     return w
 
+def dft_direct(x):
+    n = len(x)
+    fx = np.zeros(n, np.complex128)
+    for i in range(n):
+        fxi = 0
+        for j in range(n):
+            fxi += np.exp(-float(i * j) / n * 1.j * 2 * np.pi) * x[j]
+        fx[i] = fxi
+    return fx
+
+def dft(x):
+    return np.fft.fft(x)
+
 def chebwin(L, r = 100.0):
     """ Chebyshev window.
     """
@@ -367,86 +387,67 @@ def chebwin(L, r = 100.0):
 
     order = L - 1
 
-    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(r) / 20.)))
+    # sll is in dB(power).
+    # Calculate the amplification factor, e.g. sll = -60 --> amplification = 1000.0
 
-    x = beta * np.cos(np.pi * np.arange(L) / L)
+    amplification = 10.0 ** (abs(r) / 20.0)
+
+    beta = np.cosh(np.arccosh(amplification) / order)
 
     # Find the window's DFT coefficients
-    p = np.zeros(L)
-    for i in range(L):
-        if x[i] > 1:
-            p[i] = np.cosh(order * np.arccosh(x[i]))
-        elif x[i] < -1:
-            p[i] = (1 - 2 * (order % 2)) * np.cosh(order * np.arccosh(-x[i]))
-        else:
-            p[i] = np.cos(order * np.arccos(x[i]))
+    p = np.zeros(L, dtype = np.complex128)
 
     # Appropriate IDFT and filling up, depending on even/odd length.
 
     if L % 2 != 0:
-        # Odd length
-        w = np.real(np.fft.fft(p))
-        n = (L + 1) // 2
-        w = w[:n]
-        w = np.concatenate((w[n - 1:0:-1], w))
-    else:
-        # Even length
-        p = p * np.exp(1.j * np.pi / L * np.arange(L))
-        w = np.real(np.fft.fft(p))
-        n = L // 2 + 1
-        w = np.concatenate((w[n - 1:0:-1], w[1:n]))
 
-    # Normalize window so the maximum value is 1.
-    w /= np.amax(w)
+        # Odd length window
 
-    return w
+        for i in range(L):
 
-def dft(x):
-    n = len(x)
-    fx = np.zeros(n, np.complex128)
-    for i in range(n):
-        fxi = 0
-        for j in range(n):
-            fxi += np.exp(-float(i * j) / n * 1.j * 2 * np.pi) * x[j]
-        fx[i] = fxi
-    return fx
+            x =  beta * np.cos(np.pi * i / L)
 
-def chebwin2(L, r = 100.0):
-    """ Chebyshev window.
-    """
+            if x > 1:
+                p[i] =    np.cosh(order * np.arccosh( x))
+            elif x < -1:
+                p[i] =    np.cosh(order * np.arccosh(-x))
+            else:
+                p[i] =    np.cos (order * np.arccos ( x))
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
-
-    order = L - 1
-
-    beta = np.cosh(1.0 / order * np.arccosh(10 ** (np.abs(r) / 20.)))
-
-    x = beta * np.cos(np.pi * np.arange(L) / L)
-
-    # Find the window's DFT coefficients
-    p = np.zeros(L)
-    for i in range(L):
-        if x[i] > 1:
-            p[i] = np.cosh(order * np.arccosh(x[i]))
-        elif x[i] < -1:
-            p[i] = (1 - 2 * (order % 2)) * np.cosh(order * np.arccosh(-x[i]))
-        else:
-            p[i] = np.cos(order * np.arccos(x[i]))
-
-    # Appropriate IDFT and filling up, depending on even/odd length.
-
-    if L % 2 != 0:
-        # Odd length
         w = np.real(dft(p))
+
+        # w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9] w[10]
+        #
+        # w[5] w[4] w[3] w[2] w[1] w[0] w[1] w[2] w[3] w[4] w[5]
+
         n = (L + 1) // 2
-        w = w[:n]
-        w = np.concatenate((w[n - 1:0:-1], w))
+
+        w = np.concatenate((w[n - 1:0:-1], w[0:n]))
+
     else:
-        # Even length
-        p = p * np.exp(1.j * np.pi / L * np.arange(L))
+
+        # Even length window
+
+        for i in range(L):
+
+            x =  beta * np.cos(np.pi * i / L)
+
+            #z = 1 + 0.j
+            z = np.exp(1.j * np.pi * i / L)
+
+            if x > 1:
+                p[i] =    z * np.cosh(order * np.arccosh( x))
+            elif x < -1:
+                p[i] =   -z * np.cosh(order * np.arccosh(-x))
+            else:
+                p[i] =    z * np.cos (order * np.arccos ( x))
+
         w = np.real(dft(p))
+
+        # w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9]
+        #
+        # w[5] w[4] w[3] w[2] w[1] w[1] w[2] w[3] w[4] w[5]
+
         n = L // 2 + 1
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
 

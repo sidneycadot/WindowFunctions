@@ -376,7 +376,12 @@ void taylorwin(double * w, unsigned n, unsigned nbar, double sll)
     // The Taylor window is cosine-window like, in that it is the sum of weighted
     // cosines of different periods.
 
-    const double a = acosh(pow(10.0, (-sll / 20.0))) / M_PI;
+    // sll is in dB(power).
+    // Calculate the amplification factor, e.g. sll = -60 --> amplification = 1000.0
+
+    const double amplification = pow(10.0, -sll / 20.0);
+
+    const double a = acosh(amplification) / M_PI;
 
     const double a2 = sq(a);
 

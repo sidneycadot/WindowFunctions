@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import re, sys
 import numpy as np
 from collections import OrderedDict
 import window_functions as wf
@@ -169,9 +170,11 @@ def make_octave_winfunc_map():
 
     return winfunc_map
 
-def check_reference_wf(ref_winfuncs, winfunc_map):
+def check_reference_wf(ref_winfuncs, winfunc_map, name_filter):
 
     for (ref_winfunc_name, ref_winfunc) in ref_winfuncs.items():
+        if not name_filter(ref_winfunc_name):
+            continue
         if ref_winfunc_name in winfunc_map:
             python_func = winfunc_map[ref_winfunc_name]
             ok = True
@@ -192,20 +195,31 @@ def check_reference_wf(ref_winfuncs, winfunc_map):
             print("Not found in winfunc_map ...... : {:30}".format(ref_winfunc_name))
     print()
 
-if True:
-    print()
-    print("*** CHECK MATLAB REFERENCE VALUES ***")
-    print()
-    ref_winfuncs = read_reference_file("reference/matlab_windows.txt")
+def main():
 
-    winfunc_map = make_matlab_winfunc_map()
-    check_reference_wf(ref_winfuncs, winfunc_map)
+    if len(sys.argv) > 1:
+        name_re = re.compile(sys.argv[1])
+        name_filter = lambda name : name_re.search(name) is not None
+    else:
+        name_filter = lambda name : True
 
-if True:
-    print()
-    print("*** CHECK OCTAVE REFERENCE VALUES ***")
-    print()
-    ref_winfuncs = read_reference_file("reference/octave_windows.txt")
+    if True:
+        print()
+        print("*** CHECK MATLAB REFERENCE VALUES ***")
+        print()
+        ref_winfuncs = read_reference_file("reference/matlab_windows.txt")
 
-    winfunc_map = make_octave_winfunc_map()
-    check_reference_wf(ref_winfuncs, winfunc_map)
+        winfunc_map = make_matlab_winfunc_map()
+        check_reference_wf(ref_winfuncs, winfunc_map, name_filter)
+
+    if True:
+        print()
+        print("*** CHECK OCTAVE REFERENCE VALUES ***")
+        print()
+        ref_winfuncs = read_reference_file("reference/octave_windows.txt")
+
+        winfunc_map = make_octave_winfunc_map()
+        check_reference_wf(ref_winfuncs, winfunc_map, name_filter)
+
+if __name__ == "__main__":
+    main()
