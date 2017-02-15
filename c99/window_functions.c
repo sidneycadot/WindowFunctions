@@ -16,7 +16,7 @@ void cosine_window(double * w, unsigned n, const double * coeff, unsigned ncoeff
 {
     // Generalized cosine window.
     //
-    //  Many window functions described in signal processing literature
+    // Many window functions described in signal processing literature
     // can be written as linear combinations of cosines over the window length.
     //
     // Let 'x' be values going from 0 for the first element, and 2*pi for the last element.
@@ -30,30 +30,29 @@ void cosine_window(double * w, unsigned n, const double * coeff, unsigned ncoeff
     // Examples of cosine windows implemented in Matlab:
     //
     //                              c0          c1           c2           c3            c4
-    //  -------------------------------------------------------------------------------------------
-    //  rectangular window          1.0
-    //    hann window                 0.5         -0.5
-    //    hamming window              0.54        -0.46
-    //    blackman window             0.42        -0.5         0.08
-    //    blackman-harris window      0.35875     -0.48829     0.14128      -0.01168
-    //    nuttall window              0.3635819   -0.4891775   0.1365995    -0.0106411
-    //    flattop window              0.21557895  -0.41663158  0.277263158  -0.083578947  0.006947368
+    // -------------------------------------------------------------------------------------------
+    // rectangular window          1.0
+    // hann window                 0.5         -0.5
+    // hamming window              0.54        -0.46
+    // blackman window             0.42        -0.5         0.08
+    // blackman-harris window      0.35875     -0.48829     0.14128      -0.01168
+    // nuttall window              0.3635819   -0.4891775   0.1365995    -0.0106411
+    // flattop window              0.21557895  -0.41663158  0.277263158  -0.083578947  0.006947368
     //
-    //    The "flattop" coefficients given above follow Matlab's "flattopwin" implementation.
-    //    The signal processing literature in fact describes many different 'flattop' windows.
+    // The "flattop" coefficients given above follow Matlab's "flattopwin" implementation.
+    // The signal processing literature in fact describes many different 'flattop' windows.
     //
-    //    Note 1 : Octave defines the flattopwin coefficients differently, see implementation below.
+    // Note 1 : Octave defines the flattopwin coefficients differently, see implementation below.
     //
-    //             The coefficient values used correspond to:
+    //          The coefficient values used correspond to:
     //
-    //             [0.21550795224343777, -0.4159303478298349, 0.2780052583940347, -0.08361708547045386, 0.006939356062238697]
+    //          [0.21550795224343777, -0.4159303478298349, 0.2780052583940347, -0.08361708547045386, 0.006939356062238697]
     //
-    //    Note 2 : Octave defines the nuttallwin coefficients differently, see implementation below:
+    // Note 2 : Octave defines the nuttallwin coefficients differently, see implementation below:
     //
-    //                 The coefficient values used are:
+    //          The coefficient values used are:
     //
-    //                 [0.355768, -0.487396, 0.144232, -0.012604]
-
+    //          [0.355768, -0.487396, 0.144232, -0.012604]
 
     if (n == 1)
     {
@@ -561,6 +560,8 @@ static void fft_recursive(complex double * z, unsigned size, unsigned stride)
 
 static void fft(complex double * z, unsigned size)
 {
+    // Radix-2 recursive FFT.
+    // Beware: only handles power-of-two sizes.
     fft_recursive(z, size, 1);
 }
 
@@ -672,7 +673,7 @@ static void czt_fft(complex double * z, unsigned size)
 
     if (sz == 1)
     {
-        // Size is a power of two. Defer to the given radix-2 fftfunc.
+        // Size is a power of two. Defer to radix-2 fft.
         fft(z, size);
     }
     else
