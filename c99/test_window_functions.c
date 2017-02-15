@@ -295,6 +295,16 @@ void check_reference_file(const char * filename, enum reference_source_t referen
     current_window_name[0] = '\0';
 
     FILE * f = fopen(filename, "r");
+    if (f == NULL)
+    {
+        printf("ERROR: unable to open reference file \"%s\".\n", filename);
+        return;
+    }
+
+    unsigned num_unchecked    = 0;
+    unsigned num_checked_good = 0;
+    unsigned num_checked_bad  = 0;
+
     for (;;)
     {
         char window_name[MAX_WINDOW_NAME_SIZE];
@@ -317,6 +327,7 @@ void check_reference_file(const char * filename, enum reference_source_t referen
             if (result != 0)
             {
                 printf("WARNING: cannot init window \"%s\" (reference = %d), with n == %u\n", window_name, reference, n);
+                ++num_unchecked;
             }
             else
             {
@@ -334,9 +345,19 @@ void check_reference_file(const char * filename, enum reference_source_t referen
             if (fabs(error) > 1e-10)
             {
                 printf("ERROR: window \"%s\" n = %u i = %u : reference = %f, calculated = %f, error = %f\n", window_name, n, i, reference_value, calculated_value, error);
+                ++num_checked_bad;
+            }
+            else
+            {
+                ++num_checked_good;
             }
         }
     }
+
+    printf("Summary for reference file \"%s\":\n", filename);
+    printf("    unchecked ............. : %u\n", num_unchecked);
+    printf("    checked and good ...... : %u\n", num_checked_good);
+    printf("    checked and bad ....... : %u\n", num_checked_bad);
 
     fclose(f);
 }
