@@ -387,8 +387,8 @@ def chebwin(L, r = 100.0):
 
     order = L - 1
 
-    # sll is in dB(power).
-    # Calculate the amplification factor, e.g. sll = -60 --> amplification = 1000.0
+    # r is in dB(power).
+    # Calculate the amplification factor, e.g. r = -60 --> amplification = 1000.0
 
     amplification = 10.0 ** (abs(r) / 20.0)
 
@@ -405,7 +405,7 @@ def chebwin(L, r = 100.0):
 
         for i in range(L):
 
-            x =  beta * np.cos(np.pi * i / L)
+            x = beta * np.cos(np.pi * i / L)
 
             if x > 1:
                 p[i] =    np.cosh(order * np.arccosh( x))
@@ -414,15 +414,19 @@ def chebwin(L, r = 100.0):
             else:
                 p[i] =    np.cos (order * np.arccos ( x))
 
-        w = np.real(dft(p))
+        p = np.real(dft(p))
 
+        # Example: L = 11
+        #
         # w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9] w[10]
         #
-        # w[5] w[4] w[3] w[2] w[1] w[0] w[1] w[2] w[3] w[4] w[5]
+        #                            =
+        #
+        # p[5] p[4] p[3] p[2] p[1] p[0] p[1] p[2] p[3] p[4] p[5]
 
         n = (L + 1) // 2
 
-        w = np.concatenate((w[n - 1:0:-1], w[0:n]))
+        w = np.concatenate((p[n - 1:0:-1], p[0:n]))
 
     else:
 
@@ -430,9 +434,8 @@ def chebwin(L, r = 100.0):
 
         for i in range(L):
 
-            x =  beta * np.cos(np.pi * i / L)
+            x = beta * np.cos(np.pi * i / L)
 
-            #z = 1 + 0.j
             z = np.exp(1.j * np.pi * i / L)
 
             if x > 1:
@@ -442,14 +445,18 @@ def chebwin(L, r = 100.0):
             else:
                 p[i] =    z * np.cos (order * np.arccos ( x))
 
-        w = np.real(dft(p))
+        p = np.real(dft(p))
 
+        # Example: L = 10
+        #
         # w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9]
         #
-        # w[5] w[4] w[3] w[2] w[1] w[1] w[2] w[3] w[4] w[5]
+        #                         =
+        #
+        # p[5] p[4] p[3] p[2] p[1] p[1] p[2] p[3] p[4] p[5]
 
         n = L // 2 + 1
-        w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+        p = np.concatenate((p[n - 1:0:-1], p[1:n]))
 
     # Normalize window so the maximum value is 1.
     w /= np.amax(w)

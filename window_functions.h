@@ -26,7 +26,7 @@ void nuttallwin_octave (double * w, unsigned n, bool sflag); // order == 4
 void flattopwin        (double * w, unsigned n, bool sflag); // order == 5
 void flattopwin_octave (double * w, unsigned n, bool sflag); // order == 5
 
-// OTHER WINDOWS, NOT PARAMETRIZED
+// OTHER WINDOWS, NOT PARAMETERIZED
 
 void triang            (double * w, unsigned n);
 void bartlett          (double * w, unsigned n);
@@ -34,7 +34,7 @@ void barthannwin       (double * w, unsigned n);
 void bohmanwin         (double * w, unsigned n);
 void parzenwin         (double * w, unsigned n);
 
-// OTHER WINDOWS, PARAMETRIZED
+// OTHER WINDOWS, PARAMETERIZED
 
 void gausswin          (double * w, unsigned n, double alpha);
 void tukeywin          (double * w, unsigned n, double r);

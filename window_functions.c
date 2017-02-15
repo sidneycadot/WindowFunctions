@@ -3,6 +3,7 @@
 // window_functions.c //
 ////////////////////////
 
+#include <complex.h>
 #include <math.h>
 
 #include "window_functions.h"
@@ -518,6 +519,297 @@ void kaiser(double * w, unsigned n, double beta)
             const double x = (2.0 * i - (n - 1)) / (n - 1);
 
             w[i] = bessel_i0(beta * sqrt(1.0 - x * x)) / bessel_i0(beta);
+        }
+    }
+}
+
+static void fft_recursive(complex double * z, unsigned size, unsigned stride)
+{
+    if (size <= 1)
+    {
+        return;
+    }
+
+    // assert(size % 2 == 0);
+
+    // Do sub-fft's
+
+    fft_recursive(z         , size / 2, stride * 2);
+    fft_recursive(z + stride, size / 2, stride * 2);
+
+    // Copy the sub-fft results to a local, temporary array.
+
+    complex double zsub[size];
+
+    for (unsigned k = 0; k < size; ++k)
+    {
+        zsub[k] = z[stride * k];
+    }
+
+    // Combine the sub-FFTs naively.
+
+    for (unsigned k = 0; k < size; ++k)
+    {
+        const unsigned left  = (k * 2    ) % size;
+        const unsigned right = (k * 2 + 1) % size;
+
+        const complex double w = cexp(-2 * M_PI * I * k / size);
+
+        z[stride * k] = zsub[left] + w * zsub[right];
+    }
+}
+
+static void fft(complex double * z, unsigned size)
+{
+    fft_recursive(z, size, 1);
+}
+
+static void czt(complex double * z, unsigned n, complex double * ztrans, unsigned m, complex double w, complex double a)
+{
+    // Determine next-biggest power-of-two that fits the (n + m - 1) entries we need.
+
+    unsigned fft_size = 1;
+    while (fft_size < n + m - 1)
+    {
+        fft_size *= 2;
+    }
+
+    complex double zz[fft_size];
+
+    // Initialize zz.
+
+    for (unsigned k = 0; k < fft_size; ++k)
+    {
+        if (k < n)
+        {
+            const complex double w1 = cpow(w, 0.5 * k * k) / cpow(a, k);
+            zz[k] = w1 * z[k];
+        }
+        else
+        {
+            zz[k] = 0;
+        }
+    }
+
+    // Do forward FFT of zz.
+
+    fft(zz, fft_size);
+
+    // Allocate and initialize w2 that we will convolve with.
+
+    complex double w2[fft_size];
+
+    for (unsigned k = 0; k < fft_size; ++k)
+    {
+        if (k < n + m - 1)
+        {
+            const int kshift = k - (n - 1);
+
+            w2[k] = cpow(w, -0.5 * kshift * kshift);
+        }
+        else
+        {
+            w2[k] = 0;
+        }
+    }
+
+    // Do forward FFT of w2.
+
+    fft(w2, fft_size);
+
+    // Do convolution: zz[i] = zz[i] * w2[i]
+
+    for (unsigned k = 0; k < fft_size; ++k)
+    {
+        zz[k] *= w2[k];
+    }
+
+    // Do inverse FFT of (zz * w2), put result in zz.
+
+    fft(zz, fft_size); // forward FFT
+
+    // Make an inverse FFT from the forward FFT.
+    // - scale all elements by 1 / fft_size;
+    // - reverse elements 1 .. (fft_size - 1).
+
+    for (unsigned k = 0; k < fft_size; ++k)
+    {
+        zz[k] /= fft_size;
+    }
+
+    for (unsigned k = 1; k < fft_size - k; ++k)
+    {
+        const unsigned kswap = fft_size - k;
+
+        const complex double temp = zz[k];
+        zz[k]     = zz[kswap];
+        zz[kswap] = temp;
+    }
+
+    // Extract output:
+
+    for (unsigned k = 0; k < m; ++k)
+    {
+        const complex double w3 = cpow(w, (0.5 * k * k));
+        ztrans[k] = w3 * zz[n - 1 + k];
+    }
+}
+
+static void czt_fft(complex double * z, unsigned size)
+{
+    if (size == 0)
+    {
+        return;
+    }
+
+    // Check if size is a power of two.
+
+    unsigned sz = size;
+    while (sz % 2 == 0)
+    {
+        sz /= 2;
+    }
+
+    if (sz == 1)
+    {
+        // Size is a power of two. Defer to the given radix-2 fftfunc.
+        fft(z, size);
+    }
+    else
+    {
+        // Size is not a power of two.
+        // Calculate the FFT via the Chirp-Z transform.
+
+        const complex double w = cexp(-2.0 * M_PI * I / size);
+        const complex double a = 1;
+
+        czt(z, size, z, size, w, a);
+    }
+}
+
+void chebwin(double * w, unsigned n, double r)
+{
+    // Chebyshev window.
+    //
+    // Default value of the "r" parameter is 100.0.
+
+    if (n == 1)
+    {
+        // Special case for n == 1.
+        w[0] = 1.0;
+    }
+    else
+    {
+        const unsigned order = n - 1;
+
+        // r is in dB(power).
+        // Calculate the amplification factor, e.g. r = +60 --> amplification = 1000.0
+
+        const double amplification = pow(10.0, fabs(r) / 20.0);
+
+        const double beta = cosh(acosh(amplification) / order);
+
+        // Find the window's DFT coefficients
+        complex double p[n];
+
+        // Appropriate IDFT and filling up, depending on even/odd length.
+
+        if (n % 2 != 0)
+        {
+            // Odd length window
+
+            for (unsigned i = 0; i < n; ++i)
+            {
+                const double x = beta * cos(M_PI * i / n);
+
+                if (x > 1.0)
+                {
+                    p[i] = cosh(order * acosh(x));
+                }
+                else if (x < -1.0)
+                {
+                    p[i] = cosh(order * acosh(-x));
+                }
+                else
+                {
+                    p[i] = cos (order * acos(x));
+                }
+            }
+
+            czt_fft(p, n);
+
+            // Example: n = 11
+            //
+            // w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9] w[10]
+            //
+            //                            =
+            //
+            // p[5] p[4] p[3] p[2] p[1] p[0] p[1] p[2] p[3] p[4] p[5]
+
+            const unsigned h = (n - 1) / 2;
+
+            for (unsigned i = 0; i < n; ++i)
+            {
+                const unsigned j = (i <= h) ? (h - i) : (i - h);
+
+                w[i] = creal(p[j]);
+            }
+        }
+        else
+        {
+            // Even length window
+
+            for (unsigned i = 0; i < n; ++i)
+            {
+                const double x = beta * cos(M_PI * i / n);
+
+                const complex double z = cexp(M_PI * I * i / n);
+
+                if (x > 1)
+                {
+                    p[i] =  z * cosh(order * acosh( x));
+                }
+                else if (x < -1)
+                {
+                    p[i] = -z * cosh(order * acosh(-x));
+                }
+                else
+                {
+                    p[i] =  z * cos (order * acos ( x));
+                }
+            }
+
+            czt_fft(p, n);
+
+            // Example: n = 10
+            //
+            // w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9]
+            //
+            //                         =
+            //
+            // p[5] p[4] p[3] p[2] p[1] p[1] p[2] p[3] p[4] p[5]
+
+            const unsigned h = n / 2;
+
+            for (unsigned i = 0; i < n; ++i)
+            {
+                const unsigned j = (i < h) ? (h - i) : (i - h + 1);
+
+                w[i] = creal(p[j]);
+            }
+        }
+
+        // Normalize window so the maximum value is 1.
+
+        double maxw = w[0];
+        for (unsigned i = 1; i < n; ++i)
+        {
+            maxw = fmax(maxw, w[i]);
+        }
+
+        for (unsigned i = 0; i < n; ++i)
+        {
+            w[i] /= maxw;
         }
     }
 }

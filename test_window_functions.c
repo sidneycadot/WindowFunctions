@@ -263,6 +263,18 @@ static int init_window(const char * window_name, enum reference_source_t referen
     {
         kaiser(w, n, 0.8);
     }
+    else if (strcmp(window_name, "chebwin") == 0)
+    {
+        chebwin(w, n, 100.0);
+    }
+    else if (strcmp(window_name, "chebwin_100p0") == 0)
+    {
+        chebwin(w, n, 100.0);
+    }
+    else if (strcmp(window_name, "chebwin_120p0") == 0)
+    {
+        chebwin(w, n, 120.0);
+    }
     else
     {
         return -1; // Window name not handled.
