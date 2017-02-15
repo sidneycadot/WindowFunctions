@@ -6,6 +6,10 @@
 #ifndef window_functions_h
 #define window_functions_h
 
+#ifdef __cplusplus
+extern "{"
+#endif
+
 #include <stdbool.h>
 
 // COSINE WINDOWS
@@ -41,5 +45,9 @@ void tukeywin          (double * w, unsigned n, double r);
 void taylorwin         (double * w, unsigned n, unsigned nbar, double sll);
 void kaiser            (double * w, unsigned n, double beta);
 void chebwin           (double * w, unsigned n, double r);
+
+#ifdef __cplusplus
+} // end of extern "C"
+#endif
 
 #endif // window_functions_h
