@@ -456,7 +456,7 @@ def chebwin(L, r = 100.0):
         # p[5] p[4] p[3] p[2] p[1] p[1] p[2] p[3] p[4] p[5]
 
         n = L // 2 + 1
-        p = np.concatenate((p[n - 1:0:-1], p[1:n]))
+        w = np.concatenate((p[n - 1:0:-1], p[1:n]))
 
     # Normalize window so the maximum value is 1.
     w /= np.amax(w)
