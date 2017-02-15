@@ -7,7 +7,7 @@
 #define window_functions_h
 
 #ifdef __cplusplus
-extern "{"
+extern "C" {
 #endif
 
 #include <stdbool.h>
