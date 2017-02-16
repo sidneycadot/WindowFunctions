@@ -522,47 +522,82 @@ void kaiser(double * w, unsigned n, double beta)
     }
 }
 
-static void fft_recursive(complex double * z, unsigned size, unsigned stride)
+static unsigned bitreverse(unsigned n, unsigned size)
 {
-    if (size <= 1)
+    unsigned ri = 0;
+    while (size != 1)
     {
-        return;
+        ri *= 2;
+        ri |= (n & 1);
+        n >>= 1;
+        size /= 2;
     }
-
-    // assert(size % 2 == 0);
-
-    // Do sub-fft's
-
-    fft_recursive(z         , size / 2, stride * 2);
-    fft_recursive(z + stride, size / 2, stride * 2);
-
-    // Copy the sub-fft results to a local, temporary array.
-
-    complex double zsub[size];
-
-    for (unsigned k = 0; k < size; ++k)
-    {
-        zsub[k] = z[stride * k];
-    }
-
-    // Combine the sub-FFTs naively.
-
-    for (unsigned k = 0; k < size; ++k)
-    {
-        const unsigned left  = (k * 2    ) % size;
-        const unsigned right = (k * 2 + 1) % size;
-
-        const complex double w = cexp(-2 * M_PI * I * k / size);
-
-        z[stride * k] = zsub[left] + w * zsub[right];
-    }
+    return ri;
 }
 
 static void fft(complex double * z, unsigned size)
 {
-    // Radix-2 recursive FFT.
-    // Beware: only handles power-of-two sizes.
-    fft_recursive(z, size, 1);
+    // In place complex radix-2 FFT.
+
+    unsigned num_subffts = size / 2; // we start with (size / 2) FFTs of 2 base elements.
+    unsigned size_subfft = 2;
+
+    // Pre-calculate twiddle factors.
+
+    complex double ww[size / 2];
+
+    for (unsigned i = 0; i < size / 2; ++i)
+    {
+        ww[i] = cexp(-2.0 * M_PI * I * i / size);
+    }
+
+    // Permute the input elements (bit-reversal of indices).
+
+    for (unsigned i = 0; i < size; ++i)
+    {
+        const unsigned ri = bitreverse(i, size);
+        if (i < ri)
+        {
+            // Exchange values.
+            const complex double temp = z[i];
+            z[i] = z[ri];
+            z[ri] = temp;
+        }
+    }
+
+    // Perform FFTs
+
+    while (num_subffts != 0)
+    {
+        for (unsigned i = 0; i < num_subffts; ++i)
+        {
+            // Perform FFT #i.
+
+            unsigned subfft_offset = size_subfft * i;
+
+            for (unsigned j = 0; j < size_subfft / 2; ++j)
+            {
+                unsigned target1 = subfft_offset + j;
+                unsigned target2 = subfft_offset + j + size_subfft / 2;
+
+                unsigned left  = target1;
+                unsigned right = target2;
+
+                const unsigned ww_index = (j * num_subffts);
+
+                const complex double w = ww[ww_index];
+
+                const complex double   zleft  =     z[left];
+                const complex double w_zright = w * z[right];
+
+                z[target1] = zleft + w_zright;
+                z[target2] = zleft - w_zright;
+            }
+        }
+
+        num_subffts /= 2;
+        size_subfft *= 2;
+    }
 }
 
 static void czt(complex double * z, unsigned n, complex double * ztrans, unsigned m, complex double w, complex double a)
