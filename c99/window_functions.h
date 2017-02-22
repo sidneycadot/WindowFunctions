@@ -46,6 +46,10 @@ void taylorwin         (double * w, unsigned n, unsigned nbar, double sll);
 void kaiser            (double * w, unsigned n, double beta);
 void chebwin           (double * w, unsigned n, double r);
 
+// COMPLEX-VALUED, IN-PLACE FFT
+
+void fft(double * z, unsigned size, bool inv);
+
 #ifdef __cplusplus
 } // end of extern "C"
 #endif

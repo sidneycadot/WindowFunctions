@@ -535,7 +535,7 @@ static unsigned bitreverse(unsigned n, unsigned size)
     return ri;
 }
 
-static void fft(complex double * z, unsigned size)
+static void fft_radix2(complex double * z, unsigned size)
 {
     // In place complex radix-2 FFT.
 
@@ -629,7 +629,7 @@ static void czt(complex double * z, unsigned n, complex double * ztrans, unsigne
 
     // Do forward FFT of zz.
 
-    fft(zz, fft_size);
+    fft_radix2(zz, fft_size);
 
     // Allocate and initialize w2 that we will convolve with.
 
@@ -651,7 +651,7 @@ static void czt(complex double * z, unsigned n, complex double * ztrans, unsigne
 
     // Do forward FFT of w2.
 
-    fft(w2, fft_size);
+    fft_radix2(w2, fft_size);
 
     // Do convolution: zz[i] = zz[i] * w2[i]
 
@@ -662,7 +662,7 @@ static void czt(complex double * z, unsigned n, complex double * ztrans, unsigne
 
     // Do inverse FFT of (zz * w2), put result in zz.
 
-    fft(zz, fft_size); // forward FFT
+    fft_radix2(zz, fft_size); // forward FFT
 
     // Make an inverse FFT from the forward FFT.
     // - scale all elements by 1 / fft_size;
@@ -709,7 +709,7 @@ static void czt_fft(complex double * z, unsigned size)
     if (sz == 1)
     {
         // Size is a power of two. Defer to radix-2 fft.
-        fft(z, size);
+        fft_radix2(z, size);
     }
     else
     {
@@ -720,6 +720,33 @@ static void czt_fft(complex double * z, unsigned size)
         const complex double a = 1;
 
         czt(z, size, z, size, w, a);
+    }
+}
+
+void fft(double * z, unsigned size, bool inv)
+{
+    complex double * zz = (complex double *)z;
+    czt_fft(zz, size);
+
+    if (inv) // Turn result of FFT into IFFT.
+    {
+        // Scale result
+
+        for (unsigned k = 0; k < size; ++k)
+        {
+            zz[k] /= size;
+        }
+
+        // Reverse frequence bins
+
+        for (unsigned k = 1; k < size - k; ++k)
+        {
+            const unsigned kswap = size - k;
+
+            const complex double temp = zz[k];
+            zz[k]     = zz[kswap];
+            zz[kswap] = temp;
+        }
     }
 }
 
@@ -849,3 +876,4 @@ void chebwin(double * w, unsigned n, double r)
         }
     }
 }
+
