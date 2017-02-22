@@ -1,5 +1,2 @@
 __pycache__
 *.pyc
-c99/test_window_functions
-c99/test_window_functions.o
-c99/window_functions.o
