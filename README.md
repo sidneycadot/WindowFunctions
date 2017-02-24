@@ -56,15 +56,16 @@ functions take extra arguments in the function call.
 
 Cosine windows consist of a linear combination of cosine-shaped base-functions. The domain
 of the window is x = [0 .. 2*pi], and the base functions are { cos(0 * x), cos(1 * x),
-cos(2 * x), cos (3 * x), ... }. Note that the first function cos (0 * x) simplifies to a
+cos(2 * x), cos (3 * x), ... }, etcetera. Note that the first function cos (0 * x) simplifies to a
 constant 1.
 
-The number of cosine windows used in a cosine window is referred to as its *order*.
+The number of cosine terms used in a cosine window is referred to as its *order*.
 
-All cosine windows have an *sflag* parameter that specifies whether the generated window
-should be 'symmetric' (true) 'periodic' (false). The symmetric choice returns a perfectly
-symmetric window. The periodic choice works as if a window with (size + 1) elements is
-calculated, after which the last element is dropped.
+The cosine window functions have an *sflag* parameter that specifies whether the generated
+window should be 'symmetric' (sflag == true), or 'periodic' (sflag == false).
+The symmetric choice returns a perfectly symmetric window.
+The periodic choice works as if a window with (size + 1) elements is calculated,
+after which the last element is dropped.
 
 #### Generic cosine window 
 
@@ -81,7 +82,7 @@ since it would make no difference.
 
     void rectwin(double * w, unsigned n);
 
-The Hann window is a second-order cosine window that is shaped as a single cosine period of the cosine function.
+The Hann window is a second-order cosine window that is shaped as a single period of the cosine function.
 
     void hann(double * w, unsigned n, bool sflag);
 
@@ -104,9 +105,10 @@ The Nutall window definitions are different between Matlab and Octave. We define
     void nuttallwin(double * w, unsigned n, bool sflag);
     void nuttallwin_octave(double * w, unsigned n, bool sflag);
 
-The signal processing literature defines several 'flattop' windows. Matlab define similar but not idential
-fifth-order cosine windows with this name. These windows are characterized by a very flat top, and by
-the fact that they contain negative values:
+The signal processing literature defines several 'flattop' windows. Matlab and Octave define similar
+but not idential fifth-order cosine windows with this name; we define both.
+
+These windows are characterized by a very flat top, and by the fact that they contain negative values:
 
     void flattopwin(double * w, unsigned n, bool sflag);
     void flattopwin_octave(double * w, unsigned n, bool sflag);
