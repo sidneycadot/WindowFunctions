@@ -83,7 +83,7 @@ since it would make no difference.
 
 The Hann window is a second-order cosine window that is shaped as a single cosine period of the cosine function.
 
-    void hann (double * w, unsigned n, bool sflag);
+    void hann(double * w, unsigned n, bool sflag);
 
 The Hamming windows is a second-order cosine window that is shaped as a cosine like the Hann window, except it
 tapers off to the edge value 0.08 rather than 0:
