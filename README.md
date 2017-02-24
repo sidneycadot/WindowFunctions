@@ -1,10 +1,10 @@
 # About the WindowFunctions
 
-This repository provides C functions for the generation of signal processing windows.
-It reproduces the windows as found in Matlab and Octave up to numerical precision.
+This repository provides a C implementation for generating signal processing windows.
+It reproduces the windows provided in Matlab and Octave up to numerical precision.
 
-As a bonus, a complex, in-place FFT implementation is provided that works for any
-size *n* in O(*n* log *n*) time.
+As a bonus, a complex-valued, in-place FFT implementation is included that works for
+any size *n* in O(*n* log *n*) time.
 
 ## Design decisions
 
@@ -15,12 +15,12 @@ implement complex math. All functions used are defined in the C99 standard.
 
 Calculations of Chebyshev windows depend on the ability to perform Fourier
 transforms, and calculation of Kaiser windows depend on the availability of
-the modified Bessel function I0(x). Implementation of these functions is
+the modified Bessel function I0(x). Implementations of these functions are
 included, which means that there are no external dependencies.
 
 The implementation does not use dynamic stack allocation (malloc), enhancing
-suitability for application in embedded applications. However, if you intend to
-use the 'chebwin()' function, see its specific notes below, since it may
+suitability for application in embedded applications. However, if you intend
+to use the 'chebwin()' function, see its specific notes below, since it may
 temporarily use a considerable amount of stack space.
 
 All floating-point calculations are performed using double precision.
@@ -30,8 +30,8 @@ All floating-point calculations are performed using double precision.
 The implementation was optimized for correctness and simplicity of implementation
 rather than performance. The exception is that we do provide an FFT implementation
 in order to support the chebwin() function. (An implementation using a direct
-Fourier transform would have been simpler, but unbearably slow for all but the smallest
-sizes of windows.)
+Fourier transform would have been simpler, but unbearably slow for all but the
+smallest sizes of windows.)
 
 On a Cortex-M4 class ARM processor lacking double precision floating point support,
 running at 100 MHz, generation of a 4096-point Chebyshev window takes about 3 seconds.
@@ -47,30 +47,71 @@ the calculated window values will be stored. The second argument 'size' defines 
 of the window, i.e., the number of elements.
 
 Most window types are fully defined by their size parameter. However, several window types
-(Gauss, Tukey, Taylor, Kaiser, Chebyshev) have tunable parameters. These are provided as
-extra arguments in the function call.
+(Gauss, Tukey, Taylor, Kaiser, Chebyshev) have tunable parameters. The corresponding
+functions take extra arguments in the function call.
 
 ## List of implemented windows
 
-// COSINE WINDOWS
+### Cosine Windows
 
-// Generic cosine window
+Cosine windows consist of a linear combination of cosine-shaped base-functions. The domain
+of the window is x = [0 .. 2*pi], and the base functions are { cos(0 * x), cos(1 * x),
+cos(2 * x), cos (3 * x), ... }. Note that the first function cos (0 * x) simplifies to a
+constant 1.
 
-void cosine_window     (double * w, unsigned n, const double * coeff, unsigned ncoeff, bool sflag);
+The number of cosine windows used in a cosine window is referred to as its *order*.
 
-// Specific cosine windows
+All cosine windows have an *sflag* parameter that specifies whether the generated window
+should be 'symmetric' (true) 'periodic' (false). The symmetric choice returns a perfectly
+symmetric window. The periodic choice works as if a window with (size + 1) elements is
+calculated, after which the last element is dropped.
 
-void rectwin           (double * w, unsigned n            ); // order == 1
-void hann              (double * w, unsigned n, bool sflag); // order == 2
-void hamming           (double * w, unsigned n, bool sflag); // order == 3
-void blackman          (double * w, unsigned n, bool sflag); // order == 3
-void blackmanharris    (double * w, unsigned n, bool sflag); // order == 4
-void nuttallwin        (double * w, unsigned n, bool sflag); // order == 4
-void nuttallwin_octave (double * w, unsigned n, bool sflag); // order == 4
-void flattopwin        (double * w, unsigned n, bool sflag); // order == 5
-void flattopwin_octave (double * w, unsigned n, bool sflag); // order == 5
+#### Generic cosine window 
 
-// OTHER WINDOWS, NOT PARAMETERIZED
+The library provides a function to synthesize a generic cosine window by specifying a list
+of coefficients:
+
+    void cosine_window(double * w, unsigned n, const double * coeff, unsigned ncoeff, bool sflag);
+
+#### Specific cosine windows
+
+The first-order 'rectwin' function gives a rectangular or uniform window, which can be seen as a degenerate
+case of a cosine window: w = cos(0 * x). Note that this function lacks the 'sflag' parameter
+since it would make no difference.
+
+    void rectwin(double * w, unsigned n);
+
+The Hann window is a second-order cosine window that is shaped as a single cosine period of the cosine function.
+
+    void hann (double * w, unsigned n, bool sflag);
+
+The Hamming windows is a second-order cosine window that is shaped as a cosine like the Hann window, except it
+tapers off to the edge value 0.08 rather than 0:
+
+    void hamming(double * w, unsigned n, bool sflag);
+
+The Blackman window is a third-order cosine window:
+
+    void blackman(double * w, unsigned n, bool sflag);
+
+The Blackman-Harris window is a fourth-order cosine window:
+
+    void blackmanharris(double * w, unsigned n, bool sflag);
+
+The Nuttall window is a fourth-order window that is very similar to the Blackman-Harris window.
+The Nutall window definitions are different between Matlab and Octave. We define both:
+
+    void nuttallwin(double * w, unsigned n, bool sflag);
+    void nuttallwin_octave(double * w, unsigned n, bool sflag);
+
+The signal processing literature defines several 'flattop' windows. Matlab define similar but not idential
+fifth-order cosine windows with this name. These windows are characterized by a very flat top, and by
+the fact that they contain negative values:
+
+    void flattopwin(double * w, unsigned n, bool sflag);
+    void flattopwin_octave(double * w, unsigned n, bool sflag);
+
+### OTHER WINDOWS, NOT PARAMETERIZED
 
 void triang            (double * w, unsigned n);
 void bartlett          (double * w, unsigned n);
@@ -78,7 +119,7 @@ void barthannwin       (double * w, unsigned n);
 void bohmanwin         (double * w, unsigned n);
 void parzenwin         (double * w, unsigned n);
 
-// OTHER WINDOWS, PARAMETERIZED
+### OTHER WINDOWS, PARAMETERIZED
 
 void gausswin          (double * w, unsigned n, double alpha);
 void tukeywin          (double * w, unsigned n, double r);
