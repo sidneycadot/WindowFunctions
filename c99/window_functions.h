@@ -22,7 +22,7 @@ void cosine_window     (double * w, unsigned n, const double * coeff, unsigned n
 
 void rectwin           (double * w, unsigned n            ); // order == 1
 void hann              (double * w, unsigned n, bool sflag); // order == 2
-void hamming           (double * w, unsigned n, bool sflag); // order == 3
+void hamming           (double * w, unsigned n, bool sflag); // order == 2
 void blackman          (double * w, unsigned n, bool sflag); // order == 3
 void blackmanharris    (double * w, unsigned n, bool sflag); // order == 4
 void nuttallwin        (double * w, unsigned n, bool sflag); // order == 4
