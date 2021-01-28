@@ -8,7 +8,8 @@ any size *n* in O(*n* log *n*) time.
 
 ## Design decisions
 
-The implementation is written in C99. It can also be used from C++.
+The implementation is written in C99. It can also be used from C++, if you first compile
+the C file using a C99-compliant compiler.
 
 It is assumed that math functions are available, including functions that
 implement complex math. All functions used are defined in the C99 standard.
@@ -152,4 +153,4 @@ inverse (inv == true) Discrete Fourier Transform is to be performed.
 Note that the array pointer is a pointer-to-double rather than a pointer-to-complex-double.
 This enables the same prototype to be used from C++, which defines complex numbers via
 templates rather than as a built-in type in the language. Use casting to convert to type
-from a complex double pointer to a double pointer on ionvocation.
+from a complex double pointer to a double pointer on invocation.
