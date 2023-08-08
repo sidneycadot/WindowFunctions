@@ -1,34 +1,44 @@
 #! /usr/bin/env python3
 
-import re, sys
+"""Test Matlab and Octave window-function reference data against Python implementations."""
+
+from typing import Callable
+
 import numpy as np
-from collections import OrderedDict
 import window_functions as wf
 
-class ReferenceWindowFunction:
+
+class WindowFunctionReferenceData:
+    """A reference window function contains reference data for different window sizes."""
 
     def __init__(self):
-        self.windows = OrderedDict()
+        self.windows = {}
 
-    def set_value(self, M, i, value):
+    def set_value(self, M: int , i: int, value: float) -> None:
+        """Set single value inside an M-size window."""
 
         if M in self.windows:
             window = self.windows[M]
         else:
-            window = np.zeros(M) + np.nan # initialize window with NaN values.
+            window = np.full(M, np.nan) # initialize window with NaN values.
             self.windows[M] = window
 
         i -= 1 # Matlab/octave use 1-based indexing, but we use 0-based indexing.
 
-        assert (0 <= i < M)
+        if not (0 <= i < M):
+            raise RuntimeError("Bad reference value.")
 
         # Check that this window is new.
-        assert np.isnan(window[i])
+        if not np.isnan(window[i]):
+            raise RuntimeError("Duplicate reference value.")
+
         window[i] = value
 
-def read_reference_file(filename):
 
-    ref_winfuncs = OrderedDict()
+def read_window_function_reference_data(filename: str) -> dict[str, WindowFunctionReferenceData]:
+    """Read window-function reference data from a file."""
+
+    reference_windows = {}
 
     for line in open(filename):
 
@@ -37,28 +47,32 @@ def read_reference_file(filename):
         i = int(i)
         value = float(value)
 
-        if name in ref_winfuncs:
-            ref_winfunc = ref_winfuncs[name]
+        if name in reference_windows:
+            reference_window = reference_windows[name]
         else:
-            ref_winfunc = ReferenceWindowFunction()
-            ref_winfuncs[name] = ref_winfunc
+            reference_window = WindowFunctionReferenceData()
+            reference_windows[name] = reference_window
 
-        ref_winfunc.set_value(M, i, value)
+        reference_window.set_value(M, i, value)
 
+    # Done reading data.
     # Verify that all reference winfunc values are finite (not NaN).
 
-    for ref_winfunc in ref_winfuncs.values():
-        for w in ref_winfunc.windows.values():
+    for reference_window in reference_windows.values():
+        for w in reference_window.windows.values():
             assert np.isfinite(w).all()
 
-    # Return all reference window functions
-    return ref_winfuncs
+    # Return the reference window functions read in.
+    return reference_windows
 
-def make_matlab_winfunc_map():
 
-    # Python equivalents for the window types we find in the Matplab reference files.
+def make_python_function_map_for_matlab() -> dict[str, Callable[[int], np.ndarray]]:
+    """Make Python function map for Matlab window-functions.
+    
+    This lists Python equivalents for the window types found in the Matlab window-function reference data file.
+    """
 
-    winfunc_map = OrderedDict()
+    winfunc_map = {}
 
     winfunc_map[ "barthannwin"              ] = lambda M : wf.barthannwin(M)
     winfunc_map[ "bartlett"                 ] = lambda M : wf.bartlett(M)
@@ -84,6 +98,9 @@ def make_matlab_winfunc_map():
     winfunc_map[ "hann"                     ] = lambda M : wf.hann(M)
     winfunc_map[ "hann_periodic"            ] = lambda M : wf.hann(M, False)
     winfunc_map[ "hann_symmetric"           ] = lambda M : wf.hann(M, True)
+    winfunc_map[ "hanning"                  ] = lambda M : wf.hanning(M)
+    winfunc_map[ "hanning_periodic"         ] = lambda M : wf.hanning(M, False)
+    winfunc_map[ "hanning_symmetric"        ] = lambda M : wf.hanning(M, True)
     winfunc_map[ "kaiser"                   ] = lambda M : wf.kaiser(M)
     winfunc_map[ "kaiser_0p5"               ] = lambda M : wf.kaiser(M, 0.5)
     winfunc_map[ "kaiser_0p8"               ] = lambda M : wf.kaiser(M, 0.8)
@@ -115,18 +132,24 @@ def make_matlab_winfunc_map():
 
     return winfunc_map
 
-def make_octave_winfunc_map():
 
-    # Python equivalents for the window types we find in the Octave reference files.
+def make_python_function_map_for_octave()-> dict[str, Callable[[int], np.ndarray]]:
+    """Make Python function map for Octave window-functions.
+    
+    This lists Python equivalents for the window types found in the Octave window-function reference data file.
 
-    # Differences with the Matlab functions:
-    #
-    #   * The flattop window is defined differently (a cosine window with slightly different doefficients).
-    #   * The Nutall window is defined differently (a cosine window with slightly different doefficients).
-    #   * The Gauss window is defined differently. The parameter is scaled by a factor M/(M - 1) relative to the equivalant matlab function.
-    #   * Octave does not implement the Taylow window.
+    Differences with the Matlab functions:
 
-    winfunc_map = OrderedDict()
+    * The flattop window is defined differently (a cosine window with slightly different doefficients).
+    * The Hanning window behaves identically to the Hann  window in Octave.
+    * The Nutall window is defined differently (a cosine window with slightly different doefficients).
+    * The Taylor window is not implemented in Octave.
+
+    Note: In 2017, the Gauss window behaved differently in Octave compared to the Matlan version.
+          This has since been fixed.
+    """
+
+    winfunc_map = {}
 
     winfunc_map[ "barthannwin"              ] = lambda M : wf.barthannwin(M)
     winfunc_map[ "bartlett"                 ] = lambda M : wf.bartlett(M)
@@ -143,12 +166,15 @@ def make_octave_winfunc_map():
     winfunc_map[ "flattopwin"               ] = lambda M : wf.flattopwin_octave(M)
     winfunc_map[ "flattopwin_periodic"      ] = lambda M : wf.flattopwin_octave(M, False)
     winfunc_map[ "flattopwin_symmetric"     ] = lambda M : wf.flattopwin_octave(M, True)
-    winfunc_map[ "gausswin"                 ] = lambda M : wf.gausswin(M, 2.5 * (M - 1) / M)
-    winfunc_map[ "gausswin_2p5"             ] = lambda M : wf.gausswin(M, 2.5 * (M - 1) / M)
-    winfunc_map[ "gausswin_3p2"             ] = lambda M : wf.gausswin(M, 3.2 * (M - 1) / M)
+    winfunc_map[ "gausswin"                 ] = lambda M : wf.gausswin(M, 2.5)
+    winfunc_map[ "gausswin_2p5"             ] = lambda M : wf.gausswin(M, 2.5)
+    winfunc_map[ "gausswin_3p2"             ] = lambda M : wf.gausswin(M, 3.2)
     winfunc_map[ "hamming"                  ] = lambda M : wf.hamming(M)
     winfunc_map[ "hamming_periodic"         ] = lambda M : wf.hamming(M, False)
     winfunc_map[ "hamming_symmetric"        ] = lambda M : wf.hamming(M, True)
+    winfunc_map[ "hanning"                  ] = lambda M : wf.hanning_octave(M)
+    winfunc_map[ "hanning_periodic"         ] = lambda M : wf.hanning_octave(M, False)
+    winfunc_map[ "hanning_symmetric"        ] = lambda M : wf.hanning_octave(M, True)
     winfunc_map[ "hann"                     ] = lambda M : wf.hann(M)
     winfunc_map[ "hann_periodic"            ] = lambda M : wf.hann(M, False)
     winfunc_map[ "hann_symmetric"           ] = lambda M : wf.hann(M, True)
@@ -170,56 +196,52 @@ def make_octave_winfunc_map():
 
     return winfunc_map
 
-def check_reference_wf(ref_winfuncs, winfunc_map, name_filter):
 
-    for (ref_winfunc_name, ref_winfunc) in ref_winfuncs.items():
-        if not name_filter(ref_winfunc_name):
+def check_reference_wf(reference_windows: dict[str, WindowFunctionReferenceData],
+                       python_function_map: dict[str, Callable[[int], np.ndarray]]) -> None:
+    """verify window-function reference data against corresponding Python implementations."""
+
+    for (reference_window_name, reference_window) in reference_windows.items():
+
+        if reference_window_name not in python_function_map:
+            print("Not found in python_function_map ...... : {:30}".format(reference_window_name))
             continue
-        if ref_winfunc_name in winfunc_map:
-            python_func = winfunc_map[ref_winfunc_name]
-            ok = True
-            worsterr = 0.0
-            for (M, ref_values) in ref_winfunc.windows.items():
-                python_values = python_func(M)
-                err = np.abs(ref_values - python_values)
-                maxerr = max(err) # Maximum error for this window size
-                if maxerr > 1e-13:
-                    print("Bad window value: {} M = {} maxerr = {}".format(ref_winfunc_name, M, maxerr))
-                    print("ref_values:", ref_values)
-                    print("python_values:", python_values)
-                    ok = False
-                worsterr = max(maxerr, worsterr) # Maximum error across all window sizes.
-            if ok:
-                print("Perfect correspondence ........ : {:30} (worsterr = {:10.10g})".format(ref_winfunc_name, worsterr))
-        else:
-            print("Not found in winfunc_map ...... : {:30}".format(ref_winfunc_name))
+
+        python_function = python_function_map[reference_window_name]
+        ok = True
+        worsterr = 0.0
+        for (M, reference_values) in reference_window.windows.items():
+            python_values = python_function(M)
+            err = np.abs(reference_values - python_values)
+            maxerr = max(err) # Maximum error for this window size
+            if maxerr > 1e-13:
+                print("Bad window value: {} M = {} maxerr = {}".format(reference_window_name, M, maxerr))
+                print("reference_values:", reference_values)
+                print("python_values:", python_values)
+                ok = False
+            worsterr = max(maxerr, worsterr) # Maximum error across all window sizes.
+        if ok:
+            print("Perfect correspondence ........ : {:30} (worsterr = {:10.10g})".format(reference_window_name, worsterr))
     print()
 
-def main():
 
-    if len(sys.argv) > 1:
-        name_re = re.compile(sys.argv[1])
-        name_filter = lambda name : name_re.search(name) is not None
-    else:
-        name_filter = lambda name : True
+def main() -> None:
+    """Verify Matlab and Octave window-function reference data against Python implementations."""
 
-    if True:
-        print()
-        print("*** CHECK MATLAB REFERENCE VALUES ***")
-        print()
-        ref_winfuncs = read_reference_file("reference/matlab_windows.txt")
+    print()
 
-        winfunc_map = make_matlab_winfunc_map()
-        check_reference_wf(ref_winfuncs, winfunc_map, name_filter)
+    print("*** CHECK MATLAB REFERENCE VALUES ***")
+    print()
+    reference_windows = read_window_function_reference_data("reference/matlab_windows.txt")
+    python_function_map = make_python_function_map_for_matlab()
+    check_reference_wf(reference_windows, python_function_map)
 
-    if True:
-        print()
-        print("*** CHECK OCTAVE REFERENCE VALUES ***")
-        print()
-        ref_winfuncs = read_reference_file("reference/octave_windows.txt")
+    print("*** CHECK OCTAVE REFERENCE VALUES ***")
+    print()
+    reference_windows = read_window_function_reference_data("reference/octave_windows.txt")
+    python_function_map = make_python_function_map_for_octave()
+    check_reference_wf(reference_windows, python_function_map)
 
-        winfunc_map = make_octave_winfunc_map()
-        check_reference_wf(ref_winfuncs, winfunc_map, name_filter)
 
 if __name__ == "__main__":
     main()

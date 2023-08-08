@@ -1,15 +1,16 @@
+"""Window functions implemented in Python with numpy.
+
+These functions aim to reproduce the behavior of the Matlab functions with the same name.
+
+The implementations below use only basic NumPy functions; the aim is to have reference implementations
+from which we can easily derive a C implementation.
+
+There are two window types for which this is somewhat tricky:
+- The Kaiser window depends on the ability to calculate the modified Bessel function of the first kind I0(x).
+- The Chebyshev window depends on the ability to perform a Discrete Fourier Transform (DFT).
+"""
 
 import numpy as np
-
-# These functions aim to reproduce the behavior of the Matlab functions with the same name.
-
-# The implementations below use only basic NumPy functions; the aim is to have reference implementations
-# from which we can easily derive a C implementation.
-#
-# There are two window types for which this is somewhat tricky:
-#
-# - The Kaiser window depends on the ability to calculate the modified Bessel function of the first kind I0(x).
-# - The Chebyshev window depends on the ability top perform a Discrete Fourier Transform (DFT).
 
 ###################################
 #                                 #
@@ -17,21 +18,21 @@ import numpy as np
 #                                 #
 ###################################
 
-def cosine_window(N, coeff, sflag = True):
-    """ Generalized cosine window.
+def cosine_window(n: int, coefficients: list[float], symmetry_flag: bool=True) -> np.ndarray:
+    """Generalized cosine window.
 
-        Many window functions described in signal processing literature
-        can be written as linear combinations of cosines over the window length.
+    Many window functions described in signal processing literature
+    can be written as linear combinations of cosines over the window length.
 
-        Let 'x' be values going from 0 for the first element, and 2*pi for the last element.
+    Let 'x' be values going from 0 for the first element, and 2*pi for the last element.
 
-        The window can then be written as:
+    The window can then be written as:
 
-        w = c0 * cos(0 * x) + c1 * cos(1 * x) + c2 * cos(2 * x) + c3 * cos(3 * x) + ...
+    w = c0 * cos(0 * x) + c1 * cos(1 * x) + c2 * cos(2 * x) + c3 * cos(3 * x) + ...
 
-        (Note that the first term simplifies to just the constant value c0.)
+    (Note that the first term simplifies to just the constant value c0.)
 
-        Examples of cosine windows implemented in Matlab:
+    Examples of cosine windows implemented in Matlab:
 
                                     c0          c1           c2           c3            c4
         -------------------------------------------------------------------------------------------
@@ -59,118 +60,148 @@ def cosine_window(N, coeff, sflag = True):
                  [0.355768, -0.487396, 0.144232, -0.012604]
     """
 
-    # Special case for N == 1, otherwise we'd divide by zero.
-    if N <= 1:
-        return np.ones(N)
+    # Special case for (n==1), otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
 
-    if sflag:
+    if symmetry_flag:
         # The normal, symmetric form of the window.
-        x = np.arange(N) * (2 * np.pi / (N - 1))
+        x = np.arange(n) * (2 * np.pi / (n - 1))
     else:
         # The periodic form. Calculate the window as if it's one element longer, and discard the last element.
-        x = np.arange(N) * (2 * np.pi / (N    ))
+        x = np.arange(n) * (2 * np.pi / (n    ))
 
-    w = np.zeros(N)
-    for i in range(len(coeff)):
-        w += coeff[i] * np.cos(i * x)
+    w = np.zeros(n)
+    for (i, coefficient) in enumerate(coefficients):
+        w += coefficient * np.cos(i * x)
 
     return w
 
-def rectwin(L):
-    """ Rectangular window
+
+def rectwin(n: int) -> np.ndarray:
+    """Rectangular (all-ones) window.
+
+    Note: this window can also be seen as the simplest of the cosine windows.
+    It could be implemented as such:
+
+        cosine_window(n, [1.0], True)
+
+    Of course, the implementation given below is faster.
     """
 
-    # Note: this window can also be seen as the simplest of the cosine windows:
-    #
-    #    return cosine_window(L, [1.0], True)
-    #
-    # Of course, the implementation given below is faster.
+    return np.ones(n) # All values are 1.
 
-    return np.ones(L) # All values are 1.
 
-def hann(L, sflag = True):
-    """ Hann window
+def hann(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Hann window.
+
+    Extrema are 0.
+    Center value is 1 for odd length,
+        0.5 - 0.5 * cos(pi * n / (n - 1)) for even length.
     """
 
-    # Extrema are 0.
-    # Center value is 1 for odd length,
-    #     0.5 - 0.5 * cos(pi * L / (L - 1)) for even length.
+    coefficients = [0.5, -0.5]
 
-    coeff = [0.5, -0.5]
+    return cosine_window(n, coefficients, symmetry_flag)
 
-    return cosine_window(L, coeff, sflag)
 
-def hamming(L, sflag = True):
-    """ Hamming window
+def hanning(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Hanning window (Matlab version).
+
+    In Matlab, the Hanning window is a truncated version of the Hann window.
+    """
+    if n == 1:
+        return np.ones(1)
+
+    if symmetry_flag:
+        return hann(n + 2)[1:-1].copy()
+    else:
+        return hann(n + 1)[0:-1].copy()
+
+
+def hanning_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Hanning window (Octave version).
+    
+    In Octave, the hanning() function is identical to the hann() function.
     """
 
-    # Note that the Hamming window is raised; its extreme values are 0.08.
-    #
-    # The center value is 1 for odd length;
-    # The venter values are 0.54 - 0.46 * cos(pi * L / (L - 1)) for even length.
+    coefficients = [0.5, -0.5]
 
-    coeff = [0.54, -0.46]
+    return cosine_window(n, coefficients, symmetry_flag)
 
-    return cosine_window(L, coeff, sflag)
 
-def blackman(N, sflag = True):
-    """ Blackman window
+def hamming(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Hamming window.
+
+    Note that the Hamming window is raised; its extreme values are 0.08.
+
+    The center value is 1 for odd length;
+    The center values are 0.54 - 0.46 * cos(pi * n / (n - 1)) for even length.
     """
 
-    coeff = [0.42, -0.5, 0.08]
+    coefficients = [0.54, -0.46]
 
-    return cosine_window(N, coeff, sflag)
+    return cosine_window(n, coefficients, symmetry_flag)
 
-def blackmanharris(N, sflag = True):
-    """ Blackman-Harris window
 
-        Note: very similar to the Nuttall window.
+def blackman(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Blackman window."""
+
+    coefficients = [0.42, -0.5, 0.08]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+def blackmanharris(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Blackman-Harris window.
+
+    Note: this window is very similar to the Nuttall window.
     """
 
-    coeff = [0.35875, -0.48829, 0.14128, -0.01168]
+    coefficients = [0.35875, -0.48829, 0.14128, -0.01168]
 
-    return cosine_window(N, coeff, sflag)
+    return cosine_window(n, coefficients, symmetry_flag)
 
-def nuttallwin(N, sflag = True):
-    """ Nuttall window
 
-        Note: very similar to the Blackman-Harris window.
+def nuttallwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Nuttall window (Matlab-compatible version).
+
+    Note: this window is very similar to the Blackman-Harris window.
     """
 
-    coeff = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
+    coefficients = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
 
-    return cosine_window(N, coeff, sflag)
+    return cosine_window(n, coefficients, symmetry_flag)
 
 
-    return cosine_window(N, coeff, sflag)
+def nuttallwin_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Nuttall window (Octave-compatible version)."""
 
-def nuttallwin_octave(N, sflag = True):
-    """ Nuttall window (Octave version)
+    coefficients = [0.355768, -0.487396, 0.144232, -0.012604]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+def flattopwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Flattop window (Matlab-compatible version).
+
+    Note: this window contains negative entries!
     """
 
-    coeff = [0.355768, -0.487396, 0.144232, -0.012604]
+    coefficients = [0.21557895, -0.41663158, 0.277263158, -0.083578947, 0.006947368]
 
-    return cosine_window(N, coeff, sflag)
+    return cosine_window(n, coefficients, symmetry_flag)
 
-def flattopwin(L, sflag = True):
-    """ Flattop window
 
-        Note: this window contains negative entries!
+def flattopwin_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Flattop window (Octave-compatible version).
+
+    Note: this window contains negative values.
     """
 
-    coeff = [0.21557895, -0.41663158, 0.277263158, -0.083578947, 0.006947368]
+    coefficients = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
 
-    return cosine_window(L, coeff, sflag)
-
-def flattopwin_octave(L, sflag = True):
-    """ Flattop window (Octave version)
-
-        Note: this window contains negative values.
-    """
-
-    coeff = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
-
-    return cosine_window(L, coeff, sflag)
+    return cosine_window(n, coefficients, symmetry_flag)
 
 ##############################
 #                            #
@@ -178,45 +209,46 @@ def flattopwin_octave(L, sflag = True):
 #                            #
 ##############################
 
-def triang(L):
-    """ Triangular window
+def triang(n: int) -> np.ndarray:
+    """Triangular window.
 
-        triang(1) == [              1.0              ]
-        triang(2) == [            0.5 0.5            ]
-        triang(3) == [          0.5 1.0 0.5          ]
-        triang(4) == [      0.25 0.75 0.75 0.25      ]
-        triang(5) == [    0.33 0.66 1.0 0.66 0.33    ]
-        triang(6) == [ 0.16 0.50 0.83 0.83 0.50 0.16 ]
+    triang(1) == [              1.0              ]
+    triang(2) == [            0.5 0.5            ]
+    triang(3) == [          0.5 1.0 0.5          ]
+    triang(4) == [      0.25 0.75 0.75 0.25      ]
+    triang(5) == [    0.33 0.66 1.0 0.66 0.33    ]
+    triang(6) == [ 0.16 0.50 0.83 0.83 0.50 0.16 ]
     """
 
-    if L % 2 == 0:
+    if n % 2 == 0:
         # Even length:
-        # Center values are (1 - 1 / L); extrema are (1 / L).
-        return 1 - np.abs(2 * np.arange(L) - (L - 1)) / (L    )
+        # Center values are (1 - 1 / n); extrema are (1 / n).
+        return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n    )
     else:
         # Odd length:
-        # Center value is 1; extrema are 2 / (L + 1).
-        return 1 - np.abs(2 * np.arange(L) - (L - 1)) / (L + 1)
+        # Center value is 1; extrema are 2 / (n + 1).
+        return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n + 1)
 
-def bartlett(L):
-    """ Bartlett window
 
-        bartlett(1) == [           1.0           ]
-        bartlett(2) == [         0.0 0.0         ]
-        bartlett(3) == [       0.0 1.0 0.0       ]
-        bartlett(4) == [    0.0 0.66 0.66 0.0    ]
-        bartlett(5) == [   0.0 0.5 1.0 0.5 0.0   ]
-        bartlett(6) == [ 0.0 0.4 0.8 0.8 0.4 0.0 ]
+def bartlett(n: int) -> np.ndarray:
+    """Bartlett window.
+
+    bartlett(1) == [           1.0           ]
+    bartlett(2) == [         0.0 0.0         ]
+    bartlett(3) == [       0.0 1.0 0.0       ]
+    bartlett(4) == [    0.0 0.66 0.66 0.0    ]
+    bartlett(5) == [   0.0 0.5 1.0 0.5 0.0   ]
+    bartlett(6) == [ 0.0 0.4 0.8 0.8 0.4 0.0 ]
     """
 
-    # Center value is 1 for odd length, 1 - 1 / (L - 1) for even length.
+    # Center value is 1 for odd length, 1 - 1 / (n - 1) for even length.
     # Extrema are 0.
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
 
-    return 1 - np.abs(2 * np.arange(L) - (L - 1)) / (L - 1)
+    return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
 
 #########################
 #                       #
@@ -224,95 +256,94 @@ def bartlett(L):
 #                       #
 #########################
 
-def barthannwin(L):
-    """ Modified Bartlett-Hann window.
-    """
+def barthannwin(n: int) -> np.ndarray:
+    """Modified Bartlett-Hann window."""
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
 
-    x = np.abs(np.arange(L) / (L - 1) - 0.5)
+    x = np.abs(np.arange(n) / (n - 1) - 0.5)
 
     return 0.62 - 0.48 * x + 0.38 * np.cos(2 * np.pi * x)
 
-def bohmanwin(L):
-    """Bohmann window.
-    """
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
+def bohmanwin(n: int) -> np.ndarray:
+    """Bohmann window."""
 
-    x = np.abs(2 * np.arange(L) - (L - 1)) / (L - 1)
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
+
+    x = np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
 
     return (1 - x) * np.cos(np.pi * x) + np.sin(np.pi * x) / np.pi
 
-def gausswin(N, Alpha = 2.5):
-    """ Gaussian window.
 
-        The parameter for the gausswin() function is different for the Matlab, Octave,
-        and SciPy versions of this function:
+def gausswin(n: int, alpha: float = 2.5) -> np.ndarray:
+    """Gaussian window.
 
-        - Matlab uses "Alpha";
-        - Octave uses "A";
-        - Scipy uses "std".
+    The parameter for the gausswin() function is different for the Matlab/Octave,
+    and SciPy versions of this function:
 
-        Matlab vs SciPy:     Alpha * std == (N - 1) / 2
+    - Matlab and Octave use "alpha"
+    - Scipy uses "std".
 
-        Matlab vs Octave:    Alpha * N == A * (N - 1)
+    Matlab vs SciPy: alpha * std == (n - 1) / 2
 
-        In this implementation, we follow the Matlab convention.
+    In this implementation, we follow the Matlab/Octave convention.
     """
 
-    # Special case for N == 1, otherwise we'd divide by zero.
-    if N <= 1:
-        return np.ones(N)
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
 
-    x = np.abs(2 * np.arange(N) - (N - 1)) / (N - 1)
+    x = np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
 
-    return np.exp( -0.5 * (Alpha * x) ** 2)
+    return np.exp( -0.5 * (alpha * x) ** 2)
 
-def parzenwin(L):
-    """ Parzen window.
 
-        This is an approximation of the Gaussian window.
+def parzenwin(n: int) -> np.ndarray:
+    """Parzen window.
 
-        The Gaussian shape is approximated by two different polynomials,
-        one for x < 0.5 and one for x > 0.5. At x == 0.5, the polynomials meet.
+    This is an approximation of the Gaussian window.
 
-        The minimum value of the two polynomials is taken.
+    The Gaussian shape is approximated by two different polynomials,
+    one for x < 0.5 and one for x > 0.5. At x == 0.5, the polynomials meet.
+
+    The minimum value of the two polynomials is taken.
     """
 
-    x = np.abs(2 * np.arange(L) - (L - 1)) / L
+    x = np.abs(2 * np.arange(n) - (n - 1)) / n
 
     return np.minimum(1 - 6 * x * x + 6 * x * x * x, 2 * (1 - x) ** 3)
 
-def tukeywin(L, r = 0.5):
-    """ Tukey window.
 
-        This window uses a cosine-shaped ramp-up and ramp-down, with an all-one part in the middle.
-        The parameter 'r' defines the fraction of the window covered by the ramp-up and ramp-down.
+def tukeywin(n: int, r: float = 0.5) -> np.ndarray:
+    """Tukey window.
 
-        r <= 0 is identical to a rectangular window.
-        r >= 1 is identical to a Hann window.
+    This window uses a cosine-shaped ramp-up and ramp-down, with an all-one part in the middle.
+    The parameter 'r' defines the fraction of the window covered by the ramp-up and ramp-down.
+
+    r <= 0 is identical to a rectangular window.
+    r >= 1 is identical to a Hann window.
     """
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
 
     r = np.clip(r, 0, 1)
 
     # Prevent division by zero for r == 0.
     if r == 0:
-        return np.ones(L)
+        return np.ones(n)
 
-    return (np.cos(np.maximum(np.abs(np.arange(L) - (L - 1) / 2) * (2 / (L - 1) / r)  - (1 / r - 1), 0) * np.pi) + 1) / 2
+    return (np.cos(np.maximum(np.abs(np.arange(n) - (n - 1) / 2) * (2 / (n - 1) / r)  - (1 / r - 1), 0) * np.pi) + 1) / 2
 
-def taylorwin(n, nbar = 4, sll = -30.0):
-    """ Taylor window.
-    """
+
+def taylorwin(n: int, nbar: int = 4, sll: float = -30.0) -> np.ndarray:
+    """Taylor window."""
 
     # sll is in dB(power).
     # Calculate the amplification factor, e.g. sll = -60 --> amplification = 1000.0
@@ -349,22 +380,24 @@ def taylorwin(n, nbar = 4, sll = -30.0):
 
     return w
 
-def kaiser(L, beta = 0.5):
-    """ Kaiser window.
-    """
+
+def kaiser(n: int, beta: float = 0.5) -> np.ndarray:
+    """Kaiser window."""
 
     from bessel_i0 import bessel_i0
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
 
-    x = (2 * np.arange(L) - (L - 1)) / (L - 1)
+    x = (2 * np.arange(n) - (n - 1)) / (n - 1)
 
     w = (bessel_i0(beta * np.sqrt(1 - x * x)) / bessel_i0(beta))
     return w
 
-def dft_direct(x):
+
+def dft_direct(x: np.ndarray) -> np.ndarray:
+    """Direct implementation of the discrete Fourier transform."""
     n = len(x)
     fx = np.zeros(n, np.complex128)
     for i in range(n):
@@ -374,18 +407,20 @@ def dft_direct(x):
         fx[i] = fxi
     return fx
 
-def dft(x):
+
+def dft(x: np.ndarray) -> np.ndarray:
+    """Discrete Fourier transform (defer to numpy)."""
     return np.fft.fft(x)
 
-def chebwin(L, r = 100.0):
-    """ Chebyshev window.
-    """
 
-    # Special case for L == 1, otherwise we'd divide by zero.
-    if L <= 1:
-        return np.ones(L)
+def chebwin(n: int, r: float = 100.0) -> np.ndarray:
+    """Chebyshev window."""
 
-    order = L - 1
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n <= 1:
+        return np.ones(n)
+
+    order = n - 1
 
     # r is in dB(power).
     # Calculate the amplification factor, e.g. r = -60 --> amplification = 1000.0
@@ -395,28 +430,28 @@ def chebwin(L, r = 100.0):
     beta = np.cosh(np.arccosh(amplification) / order)
 
     # Find the window's DFT coefficients
-    p = np.zeros(L, dtype = np.complex128)
+    p = np.zeros(n, dtype = np.complex128)
 
     # Appropriate IDFT and filling up, depending on even/odd length.
 
-    if L % 2 != 0:
+    if n % 2 != 0:
 
         # Odd length window
 
-        for i in range(L):
+        for i in range(n):
 
-            x = beta * np.cos(np.pi * i / L)
+            x = beta * np.cos(np.pi * i / n)
 
             if x > 1:
-                p[i] =    np.cosh(order * np.arccosh( x))
+                p[i] = np.cosh(order * np.arccosh( x))
             elif x < -1:
-                p[i] =    np.cosh(order * np.arccosh(-x))
+                p[i] = np.cosh(order * np.arccosh(-x))
             else:
-                p[i] =    np.cos (order * np.arccos ( x))
+                p[i] = np.cos (order * np.arccos ( x))
 
         p = np.real(dft(p))
 
-        # Example: L = 11
+        # Example: n = 11
         #
         # w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9] w[10]
         #
@@ -424,19 +459,19 @@ def chebwin(L, r = 100.0):
         #
         # p[5] p[4] p[3] p[2] p[1] p[0] p[1] p[2] p[3] p[4] p[5]
 
-        n = (L + 1) // 2
+        nn = (n + 1) // 2
 
-        w = np.concatenate((p[n - 1:0:-1], p[0:n]))
+        w = np.concatenate((p[nn - 1:0:-1], p[0:nn]))
 
     else:
 
         # Even length window
 
-        for i in range(L):
+        for i in range(n):
 
-            x = beta * np.cos(np.pi * i / L)
+            x = beta * np.cos(np.pi * i / n)
 
-            z = np.exp(1.j * np.pi * i / L)
+            z = np.exp(1.j * np.pi * i / n)
 
             if x > 1:
                 p[i] =    z * np.cosh(order * np.arccosh( x))
@@ -447,7 +482,7 @@ def chebwin(L, r = 100.0):
 
         p = np.real(dft(p))
 
-        # Example: L = 10
+        # Example: n = 10
         #
         # w[0] w[1] w[2] w[3] w[4] w[5] w[6] w[7] w[8] w[9]
         #
@@ -455,8 +490,8 @@ def chebwin(L, r = 100.0):
         #
         # p[5] p[4] p[3] p[2] p[1] p[1] p[2] p[3] p[4] p[5]
 
-        n = L // 2 + 1
-        w = np.concatenate((p[n - 1:0:-1], p[1:n]))
+        nn = n // 2 + 1
+        w = np.concatenate((p[nn - 1:0:-1], p[1:nn]))
 
     # Normalize window so the maximum value is 1.
     w /= np.amax(w)

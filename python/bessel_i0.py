@@ -1,14 +1,15 @@
+"""Implement the Bessel I0 function.
 
-# This implementation was derived from the Cephes Math Library implementation:
-#
-#    Cephes Math Library Release 2.8:  June, 2000
-#    Copyright 1984, 1987, 2000 by Stephen L. Moshier
+This implementation was derived from the Cephes Math Library implementation:
+
+    Cephes Math Library Release 2.8:  June, 2000
+    Copyright 1984, 1987, 2000 by Stephen L. Moshier
+"""
 
 import numpy as np
 
 def chbevl(x, coeff):
-    """ Evaluate Chebyshev polynomial at 'x'
-    """
+    """Evaluate Chebyshev polynomial at x."""
 
     n = len(coeff)
 
@@ -85,6 +86,7 @@ B = np.array([
     ])
 
 def bessel_i0(x):
+    """Evaluate Bessel I0 function at x."""
 
     x = abs(x)
 
