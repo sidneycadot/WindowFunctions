@@ -55,6 +55,10 @@ for M = minM:maxM
     dump_window_function(fo, 'hann_periodic'            , @(M) hann           (M, 'periodic' ), M);
     dump_window_function(fo, 'hann_symmetric'           , @(M) hann           (M, 'symmetric'), M);
 
+    dump_window_function(fo, 'hanning'                  , @(M) hanning        (M             ), M);
+    dump_window_function(fo, 'hanning_periodic'         , @(M) hanning        (M, 'periodic' ), M);
+    dump_window_function(fo, 'hanning_symmetric'        , @(M) hanning        (M, 'symmetric'), M);
+
     % The kaiser() function has an optional 'beta' parameter that defaults to 0.5 if not specified.
 
     dump_window_function(fo, 'kaiser'                   , @(M) kaiser         (M             ), M);
