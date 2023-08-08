@@ -1,0 +1,6 @@
+
+The window function reference files in this directory were created with the
+'matlab_octave/dump_all_window_functions.m' script, using the following versions of MATLAB and OCTAVE:
+
+- matlab_windows.txt --> created by Matlab version 9.14.0.2206163 (R2023a) on Windows 10.
+- octave_windows.txt --> created by Octave version 6.2.0 on Linux.
