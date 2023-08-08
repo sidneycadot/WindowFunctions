@@ -1,5 +1,5 @@
 
-if exist('OCTAVE_VERSION')
+if exist('OCTAVE_VERSION', 'builtin')
     disp('running in OCTAVE');
     pkg('load', 'signal');
     filename = 'octave_windows.txt';
@@ -69,9 +69,12 @@ for M = minM:maxM
 
     dump_window_function(fo, 'rectwin'                  , @(M) rectwin        (M             ), M);
 
-    if exist('taylorwin')
+    if exist('taylorwin', 'file')
 
-        % The taylorwin() function has optional 'nbar' and 'sll' arguments that default to 4 and -30 if not specified.
+        % The taylorwin() function has optional 'nbar' and 'sll' arguments that default to 4 and -30
+        % if not specified.
+        %
+        % The taylorwin() function is not available in Octave (v6.2.0).
 
         dump_window_function(fo, 'taylorwin'            , @(M) taylorwin      (M             ), M);
         dump_window_function(fo, 'taylorwin_4'          , @(M) taylorwin      (M,  4         ), M);
