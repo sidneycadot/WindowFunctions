@@ -28,7 +28,7 @@ class WindowFunctionReferenceData:
         if not (0 <= i < M):
             raise RuntimeError("Bad reference value.")
 
-        # Check that this window is new.
+        # Check that this data point is new.
         if not np.isnan(window[i]):
             raise RuntimeError("Duplicate reference value.")
 
@@ -145,7 +145,7 @@ def make_python_function_map_for_octave()-> dict[str, Callable[[int], np.ndarray
     * The Nutall window is defined differently (a cosine window with slightly different doefficients).
     * The Taylor window is not implemented in Octave.
 
-    Note: In 2017, the Gauss window behaved differently in Octave compared to the Matlan version.
+    Note: In 2017, the Gauss window behaved differently in Octave compared to the Matlab version.
           This has since been fixed.
     """
 
