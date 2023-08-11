@@ -1,7 +1,7 @@
 
 if exist('OCTAVE_VERSION', 'builtin')
     disp('Running in OCTAVE ...');
-    pkg('load', 'signal'); % In Octave, the 'signal' package contains the winow-function functiononality.
+    pkg('load', 'signal'); % In Octave, the 'signal' package contains the window-function functiononality.
     program = 'Octave';
     source = 'octave';
     filename = 'octave_windows.txt';
@@ -13,8 +13,8 @@ end
 
 fo = fopen(filename, 'w');
 
-fprintf(fo, "# %s version %s\n", program, version());
-fprintf(fo, "# %s\n", datetime());
+fprintf(fo, "# %s version %s\n", program, version);
+fprintf(fo, "# %s\n", datestr(now));
 
 minM = 1;
 maxM = 100;
