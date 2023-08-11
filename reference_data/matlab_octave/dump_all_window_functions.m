@@ -2,15 +2,19 @@
 if exist('OCTAVE_VERSION', 'builtin')
     disp('Running in OCTAVE ...');
     pkg('load', 'signal'); % In Octave, the 'signal' package contains the winow-function functiononality.
+    program = 'Octave';
     source = 'octave';
     filename = 'octave_windows.txt';
 else
-    disp('Running in MATLAB ...');
+    program = 'Matlab';
     source = 'matlab';
     filename = 'matlab_windows.txt';
 end
 
 fo = fopen(filename, 'w');
+
+fprintf(fo, "# %s version %s\n", program, version());
+fprintf(fo, "# %s\n", datestr(now()));
 
 minM = 1;
 maxM = 100;
@@ -32,6 +36,8 @@ for M = minM:maxM
     dump_window_function(fo, source, 'blackmanharris_symmetric' , @(M) blackmanharris (M, 'symmetric'), M);
 
     dump_window_function(fo, source, 'bohmanwin'                , @(M) bohmanwin      (M             ), M);
+
+    dump_window_function(fo, source, 'boxcar'                   , @(M) boxcar         (M             ), M);
 
     % The chebwin() function has an optional 'R' parameter that defaults to 100 if not specified.
 
