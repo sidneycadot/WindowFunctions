@@ -14,7 +14,7 @@ end
 fo = fopen(filename, 'w');
 
 fprintf(fo, "# %s version %s\n", program, version());
-fprintf(fo, "# %s\n", datestr(now()));
+fprintf(fo, "# %s\n", datetime());
 
 minM = 1;
 maxM = 100;
