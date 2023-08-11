@@ -2,6 +2,7 @@
 
 """Test Matlab and Octave window-function reference data against Python implementations."""
 
+import glob
 from typing import Callable
 
 import numpy as np
@@ -42,6 +43,10 @@ def read_window_function_reference_data(filename: str) -> dict[str, WindowFuncti
 
     for line in open(filename):
 
+        if line.startswith("#"):
+            # Ignore comment lines.
+            continue
+
         (source, name, M, i, value) = line.split()
         M = int(M)
         i = int(i)
@@ -81,6 +86,7 @@ _python_function_map = {
     ("matlab", "blackmanharris_periodic")  : lambda M : wf.blackmanharris(M, False),
     ("matlab", "blackmanharris_symmetric") : lambda M : wf.blackmanharris(M, True),
     ("matlab", "bohmanwin")                : lambda M : wf.bohmanwin(M),
+    ("matlab", "boxcar")                   : lambda M : wf.rectwin(M),
     ("matlab", "chebwin")                  : lambda M : wf.chebwin(M),
     ("matlab", "chebwin_100p0")            : lambda M : wf.chebwin(M, 100.0),
     ("matlab", "chebwin_120p0")            : lambda M : wf.chebwin(M, 120.0),
@@ -149,6 +155,7 @@ _python_function_map = {
     ("octave", "blackmanharris_periodic")  : lambda M : wf.blackmanharris(M, False),
     ("octave", "blackmanharris_symmetric") : lambda M : wf.blackmanharris(M, True),
     ("octave", "bohmanwin")                : lambda M : wf.bohmanwin(M),
+    ("octave", "boxcar")                   : lambda M : wf.rectwin(M),
     ("octave", "chebwin")                  : lambda M : wf.chebwin(M),
     ("octave", "chebwin_100p0")            : lambda M : wf.chebwin(M, 100.0),
     ("octave", "chebwin_120p0")            : lambda M : wf.chebwin(M, 120.0),
@@ -181,11 +188,19 @@ _python_function_map = {
     ("octave", "tukeywin_0p2")             : lambda M : wf.tukeywin(M, 0.2),
     ("octave", "tukeywin_0p5")             : lambda M : wf.tukeywin(M, 0.5),
     ("octave", "tukeywin_0p8")             : lambda M : wf.tukeywin(M, 0.8),
-    ("octave", "tukeywin_1p0")             : lambda M : wf.tukeywin(M, 1.0)
+    ("octave", "tukeywin_1p0")             : lambda M : wf.tukeywin(M, 1.0),
+
+    ("numpy" , "rectwin")                  : lambda M : wf.rectwin(M),
+    ("numpy" , "bartlett")                 : lambda M : wf.bartlett(M),
+    ("numpy" , "blackman")                 : lambda M : wf.blackman(M),
+    ("numpy" , "hamming")                  : lambda M : wf.hamming(M),
+    ("numpy" , "hanning")                  : lambda M : wf.hanning_octave(M),
+    ("numpy" , "kaiser_0p5")               : lambda M : wf.kaiser(M, 0.5),
+    ("numpy" , "kaiser_0p8")               : lambda M : wf.kaiser(M, 0.8)
 }
 
 
-def check_reference_wf(reference_windows: dict[[str, WindowFunctionReferenceData], np.ndarray]) -> None:
+def check_reference_waveform_data(reference_windows: dict[[str, WindowFunctionReferenceData], np.ndarray]) -> None:
     """verify window-function reference data against corresponding Python implementations."""
 
     for (reference_window_key, reference_window) in reference_windows.items():
@@ -208,25 +223,17 @@ def check_reference_wf(reference_windows: dict[[str, WindowFunctionReferenceData
                 ok = False
             worsterr = max(maxerr, worsterr) # Maximum error across all window sizes.
         if ok:
-            print("Perfect correspondence ........ : {:30} (worsterr = {:10.10g})".format("/".join(reference_window_key), worsterr))
-    print()
+            print("Perfect correspondence : {:32} (worsterr = {:8.3g})".format("/".join(reference_window_key), worsterr))
 
 
 def main() -> None:
-    """Verify Matlab and Octave window-function reference data against Python implementations."""
+    """Verify Window-function reference data against Python implementations."""
 
-    print()
-
-    #print("*** CHECK MATLAB REFERENCE VALUES ***")
-    #print()
-    #reference_windows = read_window_function_reference_data("reference_data/matlab_windows.txt")
-    #python_function_map = make_python_function_map_for_matlab()
-    #check_reference_wf(reference_windows, python_function_map)
-
-    print("*** CHECK OCTAVE REFERENCE VALUES ***")
-    print()
-    reference_windows = read_window_function_reference_data("reference_data/octave_windows.txt")
-    check_reference_wf(reference_windows)
+    for filename in glob.glob("reference_data/*_windows.txt"):
+        print("Checking {} ...".format(filename))
+        print()
+        check_reference_waveform_data(read_window_function_reference_data(filename))
+        print()
 
 
 if __name__ == "__main__":
