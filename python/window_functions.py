@@ -256,8 +256,11 @@ def bartlett(n: int) -> np.ndarray:
 #                       #
 #########################
 
-def barthannwin(n: int) -> np.ndarray:
+def barthannwin(n: int, symmetry_flag: bool) -> np.ndarray:
     """Modified Bartlett-Hann window."""
+
+    if not symmetry_flag:
+        return barthannwin(n + 1, True)[:-1]
 
     # Special case for n == 1, otherwise we'd divide by zero.
     if n <= 1:
