@@ -71,8 +71,9 @@ def main():
             dump_window_function(source, "chebwin_120p0_periodic"   , lambda n: scipy.signal.windows.chebwin(n, 120.0, False), n)
             dump_window_function(source, "chebwin_120p0_symmetric"  , lambda n: scipy.signal.windows.chebwin(n, 120.0, True), n)
 
-            # dpss
-            # exponential
+            # TODO: dump values for scipy.signal.window.cosine() function.
+            # TODO: dump values for scipy.signal.window.dpss() function.
+            # TODO: dump values for scipy.signal.window.exponential() function.
 
             dump_window_function(source, "flattop"                  , lambda n: scipy.signal.windows.flattop(n       ), n)
             dump_window_function(source, "flattop_periodic"         , lambda n: scipy.signal.windows.flattop(n, False), n)
@@ -86,9 +87,9 @@ def main():
             dump_window_function(source, "gausswin_3p2_periodic"    , lambda n: scipy.signal.windows.gaussian(n, 3.2, False), n)
             dump_window_function(source, "gausswin_3p2_symmetric"   , lambda n: scipy.signal.windows.gaussian(n, 3.2, True ), n)
 
-            # general_cosine
-            # general_gaussian
-            # general_hamming
+            # TODO: dump values for scipy.signal.window.general_cosine() function.
+            # TODO: dump values for scipy.signal.window.general_gaussian() function.
+            # TODO: dump values for scipy.signal.window.general_hamming() function.
 
             dump_window_function(source, "hamming"               , lambda n: scipy.signal.windows.hamming(n       ), n)
             dump_window_function(source, "hamming_periodic"      , lambda n: scipy.signal.windows.hamming(n, False), n)
@@ -106,7 +107,7 @@ def main():
             dump_window_function(source, "kaiser_0p8_periodic"   , lambda n: scipy.signal.windows.kaiser(n, 0.8, False), n)
             dump_window_function(source, "kaiser_0p8_symmetric"  , lambda n: scipy.signal.windows.kaiser(n, 0.8, True ), n)
 
-            # lanczos
+            # TODO: dump values for scipy.signal.window.lanczos() function.
 
             dump_window_function(source, "nuttall"               , lambda n: scipy.signal.windows.nuttall(n       ), n)
             dump_window_function(source, "nuttall_periodic"      , lambda n: scipy.signal.windows.nuttall(n, False), n)
@@ -116,13 +117,11 @@ def main():
             dump_window_function(source, "parzen_periodic"       , lambda n: scipy.signal.windows.parzen (n, False), n)
             dump_window_function(source, "parzen_symmetric"      , lambda n: scipy.signal.windows.parzen (n, True ), n)
 
-            # taylor
+            #  TODO: dump values for scipy.signal.window.taylor() function.
 
             dump_window_function(source, "triang"                , lambda n: scipy.signal.windows.triang(n       ), n)
             dump_window_function(source, "triang_periodic"       , lambda n: scipy.signal.windows.triang(n, False), n)
             dump_window_function(source, "triang_symmetric"      , lambda n: scipy.signal.windows.triang(n, True ), n)
-
-            # tukey
 
             dump_window_function(source, "tukey"                 , lambda n: scipy.signal.windows.tukey(n            ), n)
 
