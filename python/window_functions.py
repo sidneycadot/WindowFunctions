@@ -3,7 +3,7 @@
 These functions aim to reproduce the behavior of the Matlab functions with the same name.
 
 The implementations below use only basic NumPy functions; the aim is to have reference implementations
-from which we can easily derive a C implementation.
+for all window functions from which we can easily derive a C implementation.
 
 There are two window types for which this is somewhat tricky:
 - The Kaiser window depends on the ability to calculate the modified Bessel function of the first kind I0(x).
@@ -256,7 +256,7 @@ def bartlett(n: int) -> np.ndarray:
 #                       #
 #########################
 
-def barthannwin(n: int, symmetry_flag: bool) -> np.ndarray:
+def barthannwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Modified Bartlett-Hann window."""
 
     if not symmetry_flag:
