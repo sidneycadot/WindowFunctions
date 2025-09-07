@@ -7,5 +7,3 @@ The Matlab and Octave window function reference files in this directory were cre
 
 The NumPy and SciPy window function reference files in this directory were created with the
 #'numpy_scipy/dump_all_window_functions.py' script, using the following versions of Python, NumPy, and SciPy:
-
-...

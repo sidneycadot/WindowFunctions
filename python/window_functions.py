@@ -121,7 +121,7 @@ def hanning(n: int, symmetry_flag: bool=True) -> np.ndarray:
 
 def hanning_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Hanning window (Octave version).
-    
+
     In Octave, the hanning() function is identical to the hann() function.
     """
 
@@ -163,10 +163,62 @@ def blackmanharris(n: int, symmetry_flag: bool=True) -> np.ndarray:
     return cosine_window(n, coefficients, symmetry_flag)
 
 
+def expwin(n: int, a: float, canonical_flag: bool=False) -> np.ndarray:
+    """Exponential window. Only available in Octave."""
+
+    if n < 3:
+        return np.ones(n)
+
+    # If given SLL then estimate alpha
+    if a <= -50.0:
+        a = -1.085e-4*a*a - 0.1506*a - 0.304
+    elif a <= -13.26:
+        a = -1.513e-3*a*a - 0.2809*a - 3.398
+    elif a < 0.0:
+        a = 0.0
+
+    if canonical_flag:
+        T = np.arange(1-n, 0, 2) / (n - 1)
+    else:
+        T = np.arange(1-n, 0, 2) / (n - 0)
+
+    T = np.sqrt(1.0 - T**2) - 1.0
+
+    W = np.exp(a*T)
+
+    if n % 2 == 0:
+        W = np.concatenate((W, W[::-1]))
+    else:
+        W = np.concatenate((W, [1.0], W[::-1]))
+
+    return W
+
+
+def poisswin(n: int, a: float) -> np.ndarray:
+    """Poisson window. Only available in Octave.
+
+    Similar to the expwin window.
+    """
+
+    if n < 3:
+        return np.ones(n)
+
+    T = (np.arange((n + 1) // 2) * 2 - (n - 1) // 2 * 2) / (n - 1)
+    W = np.exp(a*T)
+
+    if n % 2 == 0:
+        W = np.concat((W, W[::-1]))
+    else:
+        W = np.concat((W, W[-2::-1]))
+
+    return W
+
+
 def nuttallwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Nuttall window (Matlab-compatible version).
 
     Note: this window is very similar to the Blackman-Harris window.
+    Note: this window is available as the 'blackmannuttall's window in Octave.
     """
 
     coefficients = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
@@ -283,6 +335,20 @@ def bohmanwin(n: int) -> np.ndarray:
     return (1 - x) * np.cos(np.pi * x) + np.sin(np.pi * x) / np.pi
 
 
+def gaussian(n: int, alpha: float = 1.0):
+    """Gaussian window, for reproducing the gauss() function in Octave.
+
+
+    This function is not very well suited for uses as a window function, since its
+    shape depends on n. Prefer gausswin() instead.
+    """
+
+    # x varies from -(n-1)/2 .. +(n-1)/2
+    x = np.arange(n)-(n-1)/2
+
+    return np.exp(-0.5*(alpha * x)**2)
+
+
 def gausswin(n: int, alpha: float = 2.5) -> np.ndarray:
     """Gaussian window.
 
@@ -301,7 +367,8 @@ def gausswin(n: int, alpha: float = 2.5) -> np.ndarray:
     if n <= 1:
         return np.ones(n)
 
-    x = np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
+    # x varies from -1 .. +1.
+    x = (2 * np.arange(n) - (n - 1)) / (n - 1)
 
     return np.exp( -0.5 * (alpha * x) ** 2)
 
@@ -400,7 +467,7 @@ def kaiser(n: int, beta: float = 0.5) -> np.ndarray:
 
 
 def dft_direct(x: np.ndarray) -> np.ndarray:
-    """Direct implementation of the discrete Fourier transform."""
+    """Direct (slow!) implementation of the discrete Fourier transform."""
     n = len(x)
     fx = np.zeros(n, np.complex128)
     for i in range(n):

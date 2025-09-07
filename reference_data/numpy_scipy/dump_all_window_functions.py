@@ -14,8 +14,7 @@ def dump_window_function(source: str, name: str, f: Callable[[int], numpy.ndarra
         print("{:6s} {:24s} {:6d} {:6d} {:53.40f}".format(source, name, n, i+1, w[i]))
 
 
-def main():
-
+def dump_numpy_windows():
     source = "numpy"
     filename = "numpy_windows.txt"
     with open(filename, "w") as fo, contextlib.redirect_stdout(fo):
@@ -23,7 +22,7 @@ def main():
         print("# Numpy version {}".format(numpy.__version__))
         print("# {}".format(datetime.datetime.now().isoformat(' ')))
         for n in range(1, 100 + 1):
-            dump_window_function(source, "rectwin"    , lambda n: numpy.ones(n)       , n)
+            dump_window_function(source, "ones"       , lambda n: numpy.ones(n)       , n)
             dump_window_function(source, "bartlett"   , lambda n: numpy.bartlett(n)   , n)
             dump_window_function(source, "blackman"   , lambda n: numpy.blackman(n)   , n)
             dump_window_function(source, "hamming"    , lambda n: numpy.hamming(n)    , n)
@@ -31,6 +30,8 @@ def main():
             dump_window_function(source, "kaiser_0p5" , lambda n: numpy.kaiser(n, 0.5), n)
             dump_window_function(source, "kaiser_0p8" , lambda n: numpy.kaiser(n, 0.8), n)
 
+
+def dump_scipy_windows():
     source = "scipy"
     filename = "scipy_windows.txt"
     with open(filename, "w") as fo, contextlib.redirect_stdout(fo):
@@ -79,13 +80,13 @@ def main():
             dump_window_function(source, "flattop_periodic"         , lambda n: scipy.signal.windows.flattop(n, False), n)
             dump_window_function(source, "flattop_symmetric"        , lambda n: scipy.signal.windows.flattop(n, True ), n)
 
-            dump_window_function(source, "gausswin_2p5"             , lambda n: scipy.signal.windows.gaussian(n, 2.5       ), n)
-            dump_window_function(source, "gausswin_2p5_periodic"    , lambda n: scipy.signal.windows.gaussian(n, 2.5, False), n)
-            dump_window_function(source, "gausswin_2p5_symmetric"   , lambda n: scipy.signal.windows.gaussian(n, 2.5, True ), n)
+            dump_window_function(source, "gaussian_2p5"             , lambda n: scipy.signal.windows.gaussian(n, 2.5       ), n)
+            dump_window_function(source, "gaussian_2p5_periodic"    , lambda n: scipy.signal.windows.gaussian(n, 2.5, False), n)
+            dump_window_function(source, "gaussian_2p5_symmetric"   , lambda n: scipy.signal.windows.gaussian(n, 2.5, True ), n)
 
-            dump_window_function(source, "gausswin_3p2"             , lambda n: scipy.signal.windows.gaussian(n, 3.2       ), n)
-            dump_window_function(source, "gausswin_3p2_periodic"    , lambda n: scipy.signal.windows.gaussian(n, 3.2, False), n)
-            dump_window_function(source, "gausswin_3p2_symmetric"   , lambda n: scipy.signal.windows.gaussian(n, 3.2, True ), n)
+            dump_window_function(source, "gaussian_3p2"             , lambda n: scipy.signal.windows.gaussian(n, 3.2       ), n)
+            dump_window_function(source, "gaussian_3p2_periodic"    , lambda n: scipy.signal.windows.gaussian(n, 3.2, False), n)
+            dump_window_function(source, "gaussian_3p2_symmetric"   , lambda n: scipy.signal.windows.gaussian(n, 3.2, True ), n)
 
             # TODO: dump values for scipy.signal.window.general_cosine() function.
             # TODO: dump values for scipy.signal.window.general_gaussian() function.
@@ -107,6 +108,7 @@ def main():
             dump_window_function(source, "kaiser_0p8_periodic"   , lambda n: scipy.signal.windows.kaiser(n, 0.8, False), n)
             dump_window_function(source, "kaiser_0p8_symmetric"  , lambda n: scipy.signal.windows.kaiser(n, 0.8, True ), n)
 
+            # TODO: dump values for scipy.signal.window.kaiser_bessel_derived() function.
             # TODO: dump values for scipy.signal.window.lanczos() function.
 
             dump_window_function(source, "nuttall"               , lambda n: scipy.signal.windows.nuttall(n       ), n)
@@ -144,6 +146,10 @@ def main():
             dump_window_function(source, "tukey_1p0"             , lambda n: scipy.signal.windows.tukey(n, 1.0       ), n)
             dump_window_function(source, "tukey_1p0_periodic"    , lambda n: scipy.signal.windows.tukey(n, 1.0, False), n)
             dump_window_function(source, "tukey_1p0_symmetric"   , lambda n: scipy.signal.windows.tukey(n, 1.0, True ), n)
+
+def main():
+    dump_numpy_windows()
+    #dump_scipy_windows()
 
 
 if __name__ == "__main__":
