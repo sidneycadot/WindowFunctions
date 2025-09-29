@@ -72,7 +72,10 @@ def dump_scipy_windows():
             dump_window_function(source, "chebwin_120p0_periodic"   , lambda n: scipy.signal.windows.chebwin(n, 120.0, False), n)
             dump_window_function(source, "chebwin_120p0_symmetric"  , lambda n: scipy.signal.windows.chebwin(n, 120.0, True), n)
 
-            # TODO: dump values for scipy.signal.window.cosine() function.
+            dump_window_function(source, "cosine"                   , lambda n: scipy.signal.windows.cosine(n), n)
+            dump_window_function(source, "cosine_periodic"          , lambda n: scipy.signal.windows.cosine(n, False), n)
+            dump_window_function(source, "cosine_symmetric"         , lambda n: scipy.signal.windows.cosine(n, True), n)
+
             # TODO: dump values for scipy.signal.window.dpss() function.
             # TODO: dump values for scipy.signal.window.exponential() function.
 
@@ -90,7 +93,14 @@ def dump_scipy_windows():
 
             # TODO: dump values for scipy.signal.window.general_cosine() function.
             # TODO: dump values for scipy.signal.window.general_gaussian() function.
-            # TODO: dump values for scipy.signal.window.general_hamming() function.
+
+            dump_window_function(source, "general_hamming_0p3"           , lambda n: scipy.signal.windows.general_hamming(n, 0.3,      ), n)
+            dump_window_function(source, "general_hamming_0p3_periodic"  , lambda n: scipy.signal.windows.general_hamming(n, 0.3, False), n)
+            dump_window_function(source, "general_hamming_0p3_symmetric" , lambda n: scipy.signal.windows.general_hamming(n, 0.3, True ), n)
+
+            dump_window_function(source, "general_hamming_0p8"           , lambda n: scipy.signal.windows.general_hamming(n, 0.8,      ), n)
+            dump_window_function(source, "general_hamming_0p8_periodic"  , lambda n: scipy.signal.windows.general_hamming(n, 0.8, False), n)
+            dump_window_function(source, "general_hamming_0p8_symmetric" , lambda n: scipy.signal.windows.general_hamming(n, 0.8, True ), n)
 
             dump_window_function(source, "hamming"               , lambda n: scipy.signal.windows.hamming(n       ), n)
             dump_window_function(source, "hamming_periodic"      , lambda n: scipy.signal.windows.hamming(n, False), n)
@@ -108,8 +118,22 @@ def dump_scipy_windows():
             dump_window_function(source, "kaiser_0p8_periodic"   , lambda n: scipy.signal.windows.kaiser(n, 0.8, False), n)
             dump_window_function(source, "kaiser_0p8_symmetric"  , lambda n: scipy.signal.windows.kaiser(n, 0.8, True ), n)
 
-            # TODO: dump values for scipy.signal.window.kaiser_bessel_derived() function.
-            # TODO: dump values for scipy.signal.window.lanczos() function.
+            if n % 2 == 0:
+                # If the scipy function is called with an odd number of points, it raises a ValueError exception with the message:
+                # "Kaiser-Bessel Derived windows are only defined for even number of points".
+                # Note that the scipy.signal.windows.kaiser_bessel_derived function has "sym" as a mandatory named parameter; furthermore, it only accepts a True value.
+                dump_window_function(source, "kaiser_bessel_derived_0p5"            , lambda n: scipy.signal.windows.kaiser_bessel_derived(n, 0.5           ), n)
+                #dump_window_function(source, "kaiser_bessel_derived_0p5_periodic"   , lambda n: scipy.signal.windows.kaiser_bessel_derived(n, 0.5, sym=False), n)
+                dump_window_function(source, "kaiser_bessel_derived_0p5_symmetric"  , lambda n: scipy.signal.windows.kaiser_bessel_derived(n, 0.5, sym=True ), n)
+
+                dump_window_function(source, "kaiser_bessel_derived_0p8"            , lambda n: scipy.signal.windows.kaiser_bessel_derived(n, 0.8           ), n)
+                #dump_window_function(source, "kaiser_bessel_derived_0p8_periodic"   , lambda n: scipy.signal.windows.kaiser_bessel_derived(n, 0.8, sym=False), n)
+                dump_window_function(source, "kaiser_bessel_derived_0p8_symmetric"  , lambda n: scipy.signal.windows.kaiser_bessel_derived(n, 0.8, sym=True ), n)
+
+            # Note that the scipy.signal.windows.lanczos function has "sym" as a mandatory named parameter.
+            dump_window_function(source, "lanczos"               , lambda n: scipy.signal.windows.lanczos(n           ), n)
+            dump_window_function(source, "lanczos_periodic"      , lambda n: scipy.signal.windows.lanczos(n, sym=False), n)
+            dump_window_function(source, "lanczos_symmetric"     , lambda n: scipy.signal.windows.lanczos(n, sym=True ), n)
 
             dump_window_function(source, "nuttall"               , lambda n: scipy.signal.windows.nuttall(n       ), n)
             dump_window_function(source, "nuttall_periodic"      , lambda n: scipy.signal.windows.nuttall(n, False), n)
@@ -147,9 +171,10 @@ def dump_scipy_windows():
             dump_window_function(source, "tukey_1p0_periodic"    , lambda n: scipy.signal.windows.tukey(n, 1.0, False), n)
             dump_window_function(source, "tukey_1p0_symmetric"   , lambda n: scipy.signal.windows.tukey(n, 1.0, True ), n)
 
+
 def main():
-    dump_numpy_windows()
-    #dump_scipy_windows()
+    #dump_numpy_windows()
+    dump_scipy_windows()
 
 
 if __name__ == "__main__":

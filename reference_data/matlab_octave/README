@@ -1,0 +1,124 @@
+Matlab
+------
+
+In Matlab, the window functions are part of the Signal Processing Toolbox.
+
+See:
+
+https://nl.mathworks.com/help/signal/referencelist.html?type=function
+
+The following 19 window functions are supported by Matlab (v2025a, 2025):
+
+- barthannwin
+- bartlett
+- blackman
+- blackmanharris
+- bohmanwin
+- boxcar (deprecated; use rectwin instead)
+- chebwin
+- flattopwin
+- gausswin
+- hamming
+- hann
+- hanning
+- kaiser
+- nuttallwin
+- parzenwin
+- rectwin
+- taylorwin
+- triang
+- tukeywin
+
+Octave
+------
+
+In Octave, Most window functions are part of the "signal" package.
+
+See:
+
+    https://gnu-octave.github.io/packages/signal/
+    https://octave.sourceforge.io/signal/overview.html#Window_Functions
+
+In Octave, the following 4 window functions are available by default (no need to load the "signal" package):
+
+- bartlett
+- blackman
+- hamming
+- hanning
+
+In Octave, the following 21 window functions are only available after loading the "signal" package that
+must be explicitly loaded before any of the window functions can be called:
+
+- barthannwin
+- blackmanharris
+- blackmannuttall
+- bohmanwin
+- boxcar
+- chebwin
+- expwin
+- flattopwin
+- gaussian
+- gausswin
+- hann
+- kaiser
+- nuttallwin
+- parzenwin
+- poisswin
+- rectwin
+- taylorwin
+- triang
+- tukeywin
+- ultrwin
+- welchwin
+
+Compiling Octave
+----------------
+
+(1) Check for the latest version and download its source, e.g.
+
+    wget https://ftp.nluug.nl/pub/gnu/octave/octave-10.2.0.tar.xz
+
+(2) Prior to the "configure" step, remove stale local files:
+    rm -rf ~/.local/share/octave
+
+(3) Perform standard configure / make / make install sequence.
+
+    The "config" step takes about 1.5 minutes.
+    The "make" step takes about an hour(!)
+
+(4) Start octave, and install the "signal" package using the 'pkg' command.
+    Note that the signal package depends on the control package, so that has to be
+    installed, too:
+
+    pkg install -forge control signal
+
+Window function availability table
+----------------------------------
+
+Name            MatlabSignalProcessingToolbox     Octave     OctaveSignalPackage                      Notes
+
+barthannwin                yes                     ...            yes
+bartlett                   yes                     yes            ...
+blackman                   yes                     yes            ...
+blackmanharris             yes                     ...            yes
+blackmannuttall            ...                     ...            yes                                 Identical to Matlab's 'nuttallwin' window.
+bohmanwin                  yes                     ...            yes
+boxcar                     yes (deprecated)        ...            yes                                 Identical to rectwin()
+chebwin                    yes                     ...            yes
+expwin                     ...                     ...            yes                                 Not available in Matlab
+flattopwin                 yes                     ...            yes                                 Matlab != Octave
+gaussian                   ...                     ...            yes                                 Not available in Matlab. Closely related to gausswin.
+gausswin                   yes                     ...            yes
+hamming                    yes                     yes            ...
+hann                       yes                     ...            yes
+hanning                    yes                     yes            ...                                 Matlab != Octave
+kaiser                     yes                     ...            yes
+nuttallwin                 yes                     ...            yes                                 Matlab != Octave
+parzenwin                  yes                     ...            yes
+poisswin                   ...                     ...            yes                                 Not available in Matlab
+rectwin                    yes                     ...            yes
+taylorwin                  yes                     ...            yes
+triang                     yes                     ...            yes
+tukeywin                   yes                     ...            yes
+ultrwin                    ...                     ...            yes                                 Not available in Matlab
+welchwin                   ...                     ...            yes                                 Not available in Matlab

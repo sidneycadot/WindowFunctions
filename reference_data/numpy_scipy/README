@@ -1,0 +1,46 @@
+
+NumPy window functions
+----------------------
+
+https://numpy.org/doc/2.3/reference/routines.window.html
+
+ones
+bartlett
+blackman
+hamming
+hanning
+kaiser
+
+SciPy window functions
+----------------------
+
+https://docs.scipy.org/doc/scipy/reference/signal.windows.html
+
+The windows "????" are not yet fully supported.
+
+
+barthann
+bartlett
+blackman
+blackmanharris
+bohman
+boxcar
+chebwin
+cosine
+dpss                    ????
+exponential             ????
+flattop
+gaussian
+general_cosine          ????
+general_gaussian        ????
+general_hamming
+hamming
+hann
+kaiser
+kaiser_bessel_derived   ????
+lanczos
+nuttall
+parzen
+taylor                  ????
+triang
+tukey

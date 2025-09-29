@@ -12,11 +12,13 @@ There are two window types for which this is somewhat tricky:
 
 import numpy as np
 
-###################################
-#                                 #
-#     START OF COSINE WINDOWS     #
-#                                 #
-###################################
+from bessel_i0 import bessel_i0  # Needed for the Kaiser window.
+
+########################
+#                      #
+#    COSINE WINDOWS    #
+#                      #
+########################
 
 def cosine_window(n: int, coefficients: list[float], symmetry_flag: bool=True) -> np.ndarray:
     """Generalized cosine window.
@@ -45,7 +47,6 @@ def cosine_window(n: int, coefficients: list[float], symmetry_flag: bool=True) -
         flattop window              0.21557895  -0.41663158  0.277263158  -0.083578947  0.006947368
 
         The "flattop" coefficients given above follow Matlab's "flattopwin" implementation.
-        The signal processing literature in fact describes many different 'flattop' windows.
 
         Note 1 : Octave defines the flattopwin coefficients differently, see implementation below.
 
@@ -60,9 +61,11 @@ def cosine_window(n: int, coefficients: list[float], symmetry_flag: bool=True) -
                  [0.355768, -0.487396, 0.144232, -0.012604]
     """
 
+    assert isinstance(n, int) and n >= 1
+
     # Special case for (n==1), otherwise we'd divide by zero.
-    if n <= 1:
-        return np.ones(n)
+    if n == 1:
+        return np.ones(1)
 
     if symmetry_flag:
         # The normal, symmetric form of the window.
@@ -89,8 +92,9 @@ def rectwin(n: int) -> np.ndarray:
     Of course, the implementation given below is faster.
     """
 
-    return np.ones(n) # All values are 1.
+    assert isinstance(n, int) and n >= 1
 
+    return np.ones(n) # All values are 1. The dtype is 'float'.
 
 def hann(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Hann window.
@@ -99,6 +103,8 @@ def hann(n: int, symmetry_flag: bool=True) -> np.ndarray:
     Center value is 1 for odd length,
         0.5 - 0.5 * cos(pi * n / (n - 1)) for even length.
     """
+
+    assert isinstance(n, int) and n >= 1
 
     coefficients = [0.5, -0.5]
 
@@ -110,6 +116,9 @@ def hanning(n: int, symmetry_flag: bool=True) -> np.ndarray:
 
     In Matlab, the Hanning window is a truncated version of the Hann window.
     """
+
+    assert isinstance(n, int) and n >= 1
+
     if n == 1:
         return np.ones(1)
 
@@ -125,7 +134,19 @@ def hanning_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
     In Octave, the hanning() function is identical to the hann() function.
     """
 
+    assert isinstance(n, int) and n >= 1
+
     coefficients = [0.5, -0.5]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+def general_hamming_scipy(n: int, alpha: float, symmetry_flag: bool=True) -> np.ndarray:
+    """Generalized Hamming window."""
+
+    assert isinstance(n, int) and n >= 1
+
+    coefficients = [alpha, alpha - 1.0]
 
     return cosine_window(n, coefficients, symmetry_flag)
 
@@ -137,7 +158,13 @@ def hamming(n: int, symmetry_flag: bool=True) -> np.ndarray:
 
     The center value is 1 for odd length;
     The center values are 0.54 - 0.46 * cos(pi * n / (n - 1)) for even length.
+
+    Note: Mathematica defines the Hamming window with slightly different coefficients:
+      [25/46, 21/46].
+
     """
+
+    assert isinstance(n, int) and n >= 1
 
     coefficients = [0.54, -0.46]
 
@@ -146,6 +173,8 @@ def hamming(n: int, symmetry_flag: bool=True) -> np.ndarray:
 
 def blackman(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Blackman window."""
+
+    assert isinstance(n, int) and n >= 1
 
     coefficients = [0.42, -0.5, 0.08]
 
@@ -158,13 +187,147 @@ def blackmanharris(n: int, symmetry_flag: bool=True) -> np.ndarray:
     Note: this window is very similar to the Nuttall window.
     """
 
+    assert isinstance(n, int) and n >= 1
+
     coefficients = [0.35875, -0.48829, 0.14128, -0.01168]
 
     return cosine_window(n, coefficients, symmetry_flag)
 
 
+def nuttallwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Nuttall window (Matlab-compatible version).
+
+    Note: this window is very similar to the Blackman-Harris window.
+    Note: this window is available as the 'blackmannuttall' window in Octave.
+    """
+
+    assert isinstance(n, int) and n >= 1
+
+    coefficients = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+def nuttallwin_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Nuttall window (Octave-compatible version)."""
+
+    assert isinstance(n, int) and n >= 1
+
+    coefficients = [0.355768, -0.487396, 0.144232, -0.012604]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+def flattopwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Flattop window (Matlab-compatible version).
+
+    Note: this window contains negative entries!
+    """
+
+    assert isinstance(n, int) and n >= 1
+
+    coefficients = [0.21557895, -0.41663158, 0.277263158, -0.083578947, 0.006947368]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+def flattopwin_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Flattop window (Octave-compatible version).
+
+    Note: this window contains negative values.
+    """
+
+    assert isinstance(n, int) and n >= 1
+
+    coefficients = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
+
+    return cosine_window(n, coefficients, symmetry_flag)
+
+
+##############################
+#                            #
+#     TRIANGULAR WINDOWS     #
+#                            #
+##############################
+
+
+def triang(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Triangular window.
+
+    triang(1) == [              1.0              ]
+    triang(2) == [            0.5 0.5            ]
+    triang(3) == [          0.5 1.0 0.5          ]
+    triang(4) == [      0.25 0.75 0.75 0.25      ]
+    triang(5) == [    0.33 0.66 1.0 0.66 0.33    ]
+    triang(6) == [ 0.16 0.50 0.83 0.83 0.50 0.16 ]
+    """
+
+    assert isinstance(n, int) and n >= 1
+
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return triang(n + 1, True)[:-1].copy()
+
+    if n % 2 == 0:
+        # Even length:
+        # Center values are (1 - 1 / n); extrema are (1 / n).
+        return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n    )
+    else:
+        # Odd length:
+        # Center value is 1; extrema are 2 / (n + 1).
+        return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n + 1)
+
+
+def bartlett(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Bartlett window.
+
+    Note: The first and last values of the Bartlett window are zero, for n >= 2.
+
+    bartlett(1) == [           1.0           ]
+    bartlett(2) == [         0.0 0.0         ]
+    bartlett(3) == [       0.0 1.0 0.0       ]
+    bartlett(4) == [    0.0 0.66 0.66 0.0    ]
+    bartlett(5) == [   0.0 0.5 1.0 0.5 0.0   ]
+    bartlett(6) == [ 0.0 0.4 0.8 0.8 0.4 0.0 ]
+    """
+
+    assert isinstance(n, int) and n >= 1
+
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return bartlett(n + 1, True)[:-1].copy()
+
+    # Center value is 1 for odd length, 1 - 1 / (n - 1) for even length.
+    # Extrema are 0.
+
+    return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
+
+#########################
+#                       #
+#     OTHER WINDOWS     #
+#                       #
+#########################
+
+def cosine_scipy(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Cosine window, as defined in scipy."""
+
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return cosine_scipy(n + 1, True)[:-1].copy()
+
+    return np.cos((np.arange(n) - (n - 1) / 2) / n * np.pi)
+
+
 def expwin(n: int, a: float, canonical_flag: bool=False) -> np.ndarray:
-    """Exponential window. Only available in Octave."""
+    """The exponential window, as implemented in Octave."""
+
+    assert isinstance(n, int) and n >= 1
 
     if n < 3:
         return np.ones(n)
@@ -195,10 +358,12 @@ def expwin(n: int, a: float, canonical_flag: bool=False) -> np.ndarray:
 
 
 def poisswin(n: int, a: float) -> np.ndarray:
-    """Poisson window. Only available in Octave.
+    """The Poisson window, as implemented in Octave.
 
     Similar to the expwin window.
     """
+
+    assert isinstance(n, int) and n >= 1
 
     if n < 3:
         return np.ones(n)
@@ -213,122 +378,32 @@ def poisswin(n: int, a: float) -> np.ndarray:
 
     return W
 
-
-def nuttallwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
-    """Nuttall window (Matlab-compatible version).
-
-    Note: this window is very similar to the Blackman-Harris window.
-    Note: this window is available as the 'blackmannuttall's window in Octave.
-    """
-
-    coefficients = [0.3635819, -0.4891775, 0.1365995, -0.0106411]
-
-    return cosine_window(n, coefficients, symmetry_flag)
-
-
-def nuttallwin_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
-    """Nuttall window (Octave-compatible version)."""
-
-    coefficients = [0.355768, -0.487396, 0.144232, -0.012604]
-
-    return cosine_window(n, coefficients, symmetry_flag)
-
-
-def flattopwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
-    """Flattop window (Matlab-compatible version).
-
-    Note: this window contains negative entries!
-    """
-
-    coefficients = [0.21557895, -0.41663158, 0.277263158, -0.083578947, 0.006947368]
-
-    return cosine_window(n, coefficients, symmetry_flag)
-
-
-def flattopwin_octave(n: int, symmetry_flag: bool=True) -> np.ndarray:
-    """Flattop window (Octave-compatible version).
-
-    Note: this window contains negative values.
-    """
-
-    coefficients = [1.0 / 4.6402, -1.93 / 4.6402, 1.29 / 4.6402, -0.388 / 4.6402, 0.0322 / 4.6402]
-
-    return cosine_window(n, coefficients, symmetry_flag)
-
-##############################
-#                            #
-#     TRIANGULAR WINDOWS     #
-#                            #
-##############################
-
-def triang(n: int) -> np.ndarray:
-    """Triangular window.
-
-    triang(1) == [              1.0              ]
-    triang(2) == [            0.5 0.5            ]
-    triang(3) == [          0.5 1.0 0.5          ]
-    triang(4) == [      0.25 0.75 0.75 0.25      ]
-    triang(5) == [    0.33 0.66 1.0 0.66 0.33    ]
-    triang(6) == [ 0.16 0.50 0.83 0.83 0.50 0.16 ]
-    """
-
-    if n % 2 == 0:
-        # Even length:
-        # Center values are (1 - 1 / n); extrema are (1 / n).
-        return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n    )
-    else:
-        # Odd length:
-        # Center value is 1; extrema are 2 / (n + 1).
-        return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n + 1)
-
-
-def bartlett(n: int) -> np.ndarray:
-    """Bartlett window.
-
-    bartlett(1) == [           1.0           ]
-    bartlett(2) == [         0.0 0.0         ]
-    bartlett(3) == [       0.0 1.0 0.0       ]
-    bartlett(4) == [    0.0 0.66 0.66 0.0    ]
-    bartlett(5) == [   0.0 0.5 1.0 0.5 0.0   ]
-    bartlett(6) == [ 0.0 0.4 0.8 0.8 0.4 0.0 ]
-    """
-
-    # Center value is 1 for odd length, 1 - 1 / (n - 1) for even length.
-    # Extrema are 0.
-
-    # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
-        return np.ones(n)
-
-    return 1 - np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
-
-#########################
-#                       #
-#     OTHER WINDOWS     #
-#                       #
-#########################
-
 def barthannwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Modified Bartlett-Hann window."""
 
-    if not symmetry_flag:
-        return barthannwin(n + 1, True)[:-1]
+    assert isinstance(n, int) and n >= 1
 
-    # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
+    if n == 1:
         return np.ones(n)
+
+    if not symmetry_flag:
+        return barthannwin(n + 1, True)[:-1].copy()
 
     x = np.abs(np.arange(n) / (n - 1) - 0.5)
 
     return 0.62 - 0.48 * x + 0.38 * np.cos(2 * np.pi * x)
 
 
-def bohmanwin(n: int) -> np.ndarray:
+def bohmanwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Bohmann window."""
 
-    # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
+    assert isinstance(n, int) and n >= 1
+
+    if n == 1:
         return np.ones(n)
+
+    if not symmetry_flag:
+        return bohmanwin(n + 1, True)[:-1].copy()
 
     x = np.abs(2 * np.arange(n) - (n - 1)) / (n - 1)
 
@@ -338,15 +413,32 @@ def bohmanwin(n: int) -> np.ndarray:
 def gaussian(n: int, alpha: float = 1.0):
     """Gaussian window, for reproducing the gauss() function in Octave.
 
-
-    This function is not very well suited for uses as a window function, since its
-    shape depends on n. Prefer gausswin() instead.
+    Similar to the gausswin()
     """
+
+    assert isinstance(n, int) and n >= 1
 
     # x varies from -(n-1)/2 .. +(n-1)/2
     x = np.arange(n)-(n-1)/2
 
     return np.exp(-0.5*(alpha * x)**2)
+
+
+def gaussian_scipy(n: int, std: float, symmetry_flag: bool=True):
+    """Gaussian window, for reproducing the scipy.signal.windows.gaussian() function from SciPy."""
+
+    assert isinstance(n, int) and n >= 1
+
+    if n == 1:
+        return np.ones(n)
+
+    if not symmetry_flag:
+        return gaussian_scipy(n + 1, std, True)[:-1].copy()
+
+    # x varies from -(n-1)/2 .. +(n-1)/2
+    x = np.arange(n)-(n-1)/2
+
+    return np.exp(-x**2 / (2.0 * std * std))
 
 
 def gausswin(n: int, alpha: float = 2.5) -> np.ndarray:
@@ -363,9 +455,11 @@ def gausswin(n: int, alpha: float = 2.5) -> np.ndarray:
     In this implementation, we follow the Matlab/Octave convention.
     """
 
+    assert isinstance(n, int) and n >= 1
+
     # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
-        return np.ones(n)
+    if n == 1:
+        return np.ones(1)
 
     # x varies from -1 .. +1.
     x = (2 * np.arange(n) - (n - 1)) / (n - 1)
@@ -373,7 +467,7 @@ def gausswin(n: int, alpha: float = 2.5) -> np.ndarray:
     return np.exp( -0.5 * (alpha * x) ** 2)
 
 
-def parzenwin(n: int) -> np.ndarray:
+def parzenwin(n: int, symmetry_flag: bool=True) -> np.ndarray:
     """Parzen window.
 
     This is an approximation of the Gaussian window.
@@ -384,12 +478,33 @@ def parzenwin(n: int) -> np.ndarray:
     The minimum value of the two polynomials is taken.
     """
 
+    assert isinstance(n, int) and n >= 1
+
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return parzenwin(n + 1, True)[:-1].copy()
+
     x = np.abs(2 * np.arange(n) - (n - 1)) / n
 
     return np.minimum(1 - 6 * x * x + 6 * x * x * x, 2 * (1 - x) ** 3)
 
 
-def tukeywin(n: int, r: float = 0.5) -> np.ndarray:
+def lanczos(n: int, symmetry_flag: bool=True) -> np.ndarray:
+    """Lanczos or sinc window."""
+
+    # Special case for n == 1, otherwise we'd divide by zero.
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return lanczos(n + 1, True)[:-1].copy()
+
+    x = (np.arange(n) * 2 - (n - 1)) / (n - 1)
+    return np.sinc(x)
+
+def tukeywin(n: int, r: float = 0.5, symmetry_flag: bool=True) -> np.ndarray:
     """Tukey window.
 
     This window uses a cosine-shaped ramp-up and ramp-down, with an all-one part in the middle.
@@ -399,9 +514,14 @@ def tukeywin(n: int, r: float = 0.5) -> np.ndarray:
     r >= 1 is identical to a Hann window.
     """
 
+    assert isinstance(n, int) and n >= 1
+
     # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
-        return np.ones(n)
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return tukeywin(n + 1, r, True)[:-1].copy()
 
     r = np.clip(r, 0, 1)
 
@@ -414,6 +534,8 @@ def tukeywin(n: int, r: float = 0.5) -> np.ndarray:
 
 def taylorwin(n: int, nbar: int = 4, sll: float = -30.0) -> np.ndarray:
     """Taylor window."""
+
+    assert isinstance(n, int) and n >= 1
 
     # sll is in dB(power).
     # Calculate the amplification factor, e.g. sll = -60 --> amplification = 1000.0
@@ -451,14 +573,17 @@ def taylorwin(n: int, nbar: int = 4, sll: float = -30.0) -> np.ndarray:
     return w
 
 
-def kaiser(n: int, beta: float = 0.5) -> np.ndarray:
+def kaiser(n: int, beta: float = 0.5, symmetry_flag: bool=True) -> np.ndarray:
     """Kaiser window."""
 
-    from bessel_i0 import bessel_i0
+    assert isinstance(n, int) and n >= 1
 
     # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
-        return np.ones(n)
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return kaiser(n + 1, beta, True)[:-1].copy()
 
     x = (2 * np.arange(n) - (n - 1)) / (n - 1)
 
@@ -483,12 +608,17 @@ def dft(x: np.ndarray) -> np.ndarray:
     return np.fft.fft(x)
 
 
-def chebwin(n: int, r: float = 100.0) -> np.ndarray:
+def chebwin(n: int, r: float = 100.0, symmetry_flag: bool=True) -> np.ndarray:
     """Chebyshev window."""
 
+    assert isinstance(n, int) and n >= 1
+
     # Special case for n == 1, otherwise we'd divide by zero.
-    if n <= 1:
-        return np.ones(n)
+    if n == 1:
+        return np.ones(1)
+
+    if not symmetry_flag:
+        return chebwin(n + 1, r, True)[:-1].copy()
 
     order = n - 1
 
@@ -563,7 +693,7 @@ def chebwin(n: int, r: float = 100.0) -> np.ndarray:
         nn = n // 2 + 1
         w = np.concatenate((p[nn - 1:0:-1], p[1:nn]))
 
-    # Normalize window so the maximum value is 1.
+    # Normalize the window so the maximum value is 1.
     w /= np.amax(w)
 
     return w

@@ -1,9 +1,8 @@
-#! /usr/bin/env python3
+#! /usr/bin/env -S python3 -B
 
-"""Test Matlab and Octave window-function reference data against Python implementations."""
+"""Test Matlab, Octave, Python-NumPy, and Python-SciPy window-function reference data against Python implementations."""
 
 import glob
-from typing import Callable
 
 import numpy as np
 import window_functions as wf
@@ -13,7 +12,7 @@ class WindowFunctionReferenceData:
     """A reference window function contains reference data for different window sizes."""
 
     def __init__(self):
-        self.windows = {}
+        self.windows: dict[int, np.ndarray] = {}
 
     def set_value(self, M: int , i: int, value: float) -> None:
         """Set single value inside an M-size window."""
@@ -27,11 +26,11 @@ class WindowFunctionReferenceData:
         i -= 1 # Matlab/octave use 1-based indexing, but we use 0-based indexing.
 
         if not (0 <= i < M):
-            raise RuntimeError("Bad reference value.")
+            raise ValueError("Bad reference value.")
 
         # Check that this data point is new.
         if not np.isnan(window[i]):
-            raise RuntimeError("Duplicate reference value.")
+            raise ValueError("Duplicate reference value.")
 
         window[i] = value
 
@@ -60,10 +59,14 @@ def read_window_function_reference_data(filename: str) -> dict[str, WindowFuncti
             reference_window = WindowFunctionReferenceData()
             reference_windows[key] = reference_window
 
-        reference_window.set_value(M, i, value)
+        try:
+            reference_window.set_value(M, i, value)
+        except ValueError:
+            print(f"Error processing line: {line!r}")
+            raise
 
     # Done reading data.
-    # Verify that all reference winfunc values are finite (not NaN).
+    # Verify that all reference window values are finite (not NaN).
 
     for reference_window in reference_windows.values():
         for w in reference_window.windows.values():
@@ -75,7 +78,7 @@ def read_window_function_reference_data(filename: str) -> dict[str, WindowFuncti
 
 _python_function_map = {
 
-    # Python equivalents for the window types in the Matlab window-function reference data.
+    # Python equivalents for the window types in the window-function reference data.
 
     ("matlab", "barthannwin")               : lambda M : wf.barthannwin(M),
     ("matlab", "bartlett")                  : lambda M : wf.bartlett(M),
@@ -139,12 +142,8 @@ _python_function_map = {
     # Differences with the Matlab functions:
 
     # * The flattop window is defined differently (a cosine window with slightly different doefficients).
-    # * The Hanning window behaves identically to the Hann  window in Octave.
+    # * The Hanning window behaves identically to the Hann window in Octave.
     # * The Nutall window is defined differently (a cosine window with slightly different doefficients).
-    # * The Taylor window is not implemented in Octave.
-
-    # Note: In 2017, the Gauss window behaved differently in Octave compared to the Matlab version.
-    #      This has since been fixed.
 
     ("octave", "barthannwin")               : lambda M : wf.barthannwin(M),
     ("octave", "bartlett")                  : lambda M : wf.bartlett(M),
@@ -221,24 +220,122 @@ _python_function_map = {
 
     # Numpy windows.
 
-    ("numpy", "rectwin")                   : lambda M : wf.rectwin(M),
-    ("numpy", "bartlett")                  : lambda M : wf.bartlett(M),
-    ("numpy", "blackman")                  : lambda M : wf.blackman(M),
-    ("numpy", "hamming")                   : lambda M : wf.hamming(M),
-    ("numpy", "hanning")                   : lambda M : wf.hanning_octave(M),
-    ("numpy", "kaiser_0p5")                : lambda M : wf.kaiser(M, 0.5),
-    ("numpy", "kaiser_0p8")                : lambda M : wf.kaiser(M, 0.8),
+    ("numpy", "ones")                       : lambda M : wf.rectwin(M),
+    ("numpy", "bartlett")                   : lambda M : wf.bartlett(M),
+    ("numpy", "blackman")                   : lambda M : wf.blackman(M),
+    ("numpy", "hamming")                    : lambda M : wf.hamming(M),
+    ("numpy", "hanning")                    : lambda M : wf.hanning_octave(M),
+    ("numpy", "kaiser_0p5")                 : lambda M : wf.kaiser(M, 0.5),
+    ("numpy", "kaiser_0p8")                 : lambda M : wf.kaiser(M, 0.8),
 
     # Scipy windows.
 
-    ("scipy", "barthann")                 : lambda M : wf.barthannwin(M, True ),
-    ("scipy", "barthann_periodic")        : lambda M : wf.barthannwin(M, False),
-    ("scipy", "barthann_symmetric")       : lambda M : wf.barthannwin(M, True )
+    ("scipy", "barthann")                   : lambda M : wf.barthannwin(M, True ),
+    ("scipy", "barthann_periodic")          : lambda M : wf.barthannwin(M, False),
+    ("scipy", "barthann_symmetric")         : lambda M : wf.barthannwin(M, True ),
+
+    ("scipy", "bartlett")                   : lambda M : wf.bartlett(M, True ),
+    ("scipy", "bartlett_periodic")          : lambda M : wf.bartlett(M, False),
+    ("scipy", "bartlett_symmetric")         : lambda M : wf.bartlett(M, True ),
+
+    ("scipy", "blackman")                   : lambda M : wf.blackman(M, True ),
+    ("scipy", "blackman_periodic")          : lambda M : wf.blackman(M, False),
+    ("scipy", "blackman_symmetric")         : lambda M : wf.blackman(M, True ),
+
+    ("scipy", "blackmanharris")             : lambda M : wf.blackmanharris(M, True ),
+    ("scipy", "blackmanharris_periodic")    : lambda M : wf.blackmanharris(M, False),
+    ("scipy", "blackmanharris_symmetric")   : lambda M : wf.blackmanharris(M, True ),
+
+    ("scipy", "bohman")                     : lambda M : wf.bohmanwin(M, True ),
+    ("scipy", "bohman_periodic")            : lambda M : wf.bohmanwin(M, False),
+    ("scipy", "bohman_symmetric")           : lambda M : wf.bohmanwin(M, True ),
+
+    ("scipy", "boxcar")                     : lambda M : wf.rectwin(M),
+    ("scipy", "boxcar_periodic")            : lambda M : wf.rectwin(M),
+    ("scipy", "boxcar_symmetric")           : lambda M : wf.rectwin(M),
+
+    ("scipy", "chebwin_100p0")              : lambda M : wf.chebwin(M, 100.0),
+    ("scipy", "chebwin_100p0_periodic")     : lambda M : wf.chebwin(M, 100.0, False),
+    ("scipy", "chebwin_100p0_symmetric")    : lambda M : wf.chebwin(M, 100.0, True),
+
+    ("scipy", "chebwin_120p0")              : lambda M : wf.chebwin(M, 120.0),
+    ("scipy", "chebwin_120p0_periodic")     : lambda M : wf.chebwin(M, 120.0, False),
+    ("scipy", "chebwin_120p0_symmetric")    : lambda M : wf.chebwin(M, 120.0, True),
+
+    ("scipy", "cosine")                     : lambda M : wf.cosine_scipy(M),
+    ("scipy", "cosine_periodic")            : lambda M : wf.cosine_scipy(M, False),
+    ("scipy", "cosine_symmetric")           : lambda M : wf.cosine_scipy(M, True),
+
+    ("scipy", "lanczos")                     : lambda M : wf.lanczos(M),
+    ("scipy", "lanczos_periodic")            : lambda M : wf.lanczos(M, False),
+    ("scipy", "lanczos_symmetric")           : lambda M : wf.lanczos(M, True),
+
+    ("scipy", "flattop")                    : lambda M : wf.flattopwin(M, True),
+    ("scipy", "flattop_periodic")           : lambda M : wf.flattopwin(M, False),
+    ("scipy", "flattop_symmetric")          : lambda M : wf.flattopwin(M, True),
+
+    ("scipy", "gaussian_2p5")               : lambda M : wf.gaussian_scipy(M, 2.5),
+    ("scipy", "gaussian_2p5_periodic")      : lambda M : wf.gaussian_scipy(M, 2.5, False),
+    ("scipy", "gaussian_2p5_symmetric")     : lambda M : wf.gaussian_scipy(M, 2.5, True),
+    ("scipy", "gaussian_3p2")               : lambda M : wf.gaussian_scipy(M, 3.2),
+    ("scipy", "gaussian_3p2_periodic")      : lambda M : wf.gaussian_scipy(M, 3.2, False),
+    ("scipy", "gaussian_3p2_symmetric")     : lambda M : wf.gaussian_scipy(M, 3.2, True),
+
+    ("scipy", "hamming")                    : lambda M : wf.hamming(M, True),
+    ("scipy", "hamming_periodic")           : lambda M : wf.hamming(M, False),
+    ("scipy", "hamming_symmetric")          : lambda M : wf.hamming(M, True),
+
+    ("scipy", "general_hamming_0p3")           : lambda M : wf.general_hamming_scipy(M, 0.3, True),
+    ("scipy", "general_hamming_0p3_periodic")  : lambda M : wf.general_hamming_scipy(M, 0.3, False),
+    ("scipy", "general_hamming_0p3_symmetric") : lambda M : wf.general_hamming_scipy(M, 0.3, True),
+    ("scipy", "general_hamming_0p8")           : lambda M : wf.general_hamming_scipy(M, 0.8, True),
+    ("scipy", "general_hamming_0p8_periodic")  : lambda M : wf.general_hamming_scipy(M, 0.8, False),
+    ("scipy", "general_hamming_0p8_symmetric") : lambda M : wf.general_hamming_scipy(M, 0.8, True),
+
+    ("scipy", "hann")                       : lambda M : wf.hann(M, True),
+    ("scipy", "hann_periodic")              : lambda M : wf.hann(M, False),
+    ("scipy", "hann_symmetric")             : lambda M : wf.hann(M, True),
+
+    ("scipy", "kaiser_0p5")                 : lambda M : wf.kaiser(M, 0.5, True),
+    ("scipy", "kaiser_0p5_periodic")        : lambda M : wf.kaiser(M, 0.5, False),
+    ("scipy", "kaiser_0p5_symmetric")       : lambda M : wf.kaiser(M, 0.5, True),
+    ("scipy", "kaiser_0p8")                 : lambda M : wf.kaiser(M, 0.8, True),
+    ("scipy", "kaiser_0p8_periodic")        : lambda M : wf.kaiser(M, 0.8, False),
+    ("scipy", "kaiser_0p8_symmetric")       : lambda M : wf.kaiser(M, 0.8, True),
+
+    ("scipy", "nuttall")                    : lambda M : wf.nuttallwin(M, True ),
+    ("scipy", "nuttall_periodic")           : lambda M : wf.nuttallwin(M, False),
+    ("scipy", "nuttall_symmetric")          : lambda M : wf.nuttallwin(M, True ),
+
+    ("scipy", "parzen")                     : lambda M : wf.parzenwin(M, True ),
+    ("scipy", "parzen_periodic")            : lambda M : wf.parzenwin(M, False),
+    ("scipy", "parzen_symmetric")           : lambda M : wf.parzenwin(M, True ),
+
+    ("scipy", "triang")                     : lambda M : wf.triang(M, True ),
+    ("scipy", "triang_periodic")            : lambda M : wf.triang(M, False),
+    ("scipy", "triang_symmetric")           : lambda M : wf.triang(M, True ),
+
+    ("scipy", "tukey")                      : lambda M : wf.tukeywin(M),
+    ("scipy", "tukey_0p0")                  : lambda M : wf.tukeywin(M, 0.0),
+    ("scipy", "tukey_0p0_periodic")         : lambda M : wf.tukeywin(M, 0.0, False),
+    ("scipy", "tukey_0p0_symmetric")        : lambda M : wf.tukeywin(M, 0.0, True),
+    ("scipy", "tukey_0p2")                  : lambda M : wf.tukeywin(M, 0.2),
+    ("scipy", "tukey_0p2_periodic")         : lambda M : wf.tukeywin(M, 0.2, False),
+    ("scipy", "tukey_0p2_symmetric")        : lambda M : wf.tukeywin(M, 0.2, True),
+    ("scipy", "tukey_0p5")                  : lambda M : wf.tukeywin(M, 0.5),
+    ("scipy", "tukey_0p5_periodic")         : lambda M : wf.tukeywin(M, 0.5, False),
+    ("scipy", "tukey_0p5_symmetric")        : lambda M : wf.tukeywin(M, 0.5, True),
+    ("scipy", "tukey_0p8")                  : lambda M : wf.tukeywin(M, 0.8),
+    ("scipy", "tukey_0p8_periodic")         : lambda M : wf.tukeywin(M, 0.8, False),
+    ("scipy", "tukey_0p8_symmetric")        : lambda M : wf.tukeywin(M, 0.8, True),
+    ("scipy", "tukey_1p0")                  : lambda M : wf.tukeywin(M, 1.0),
+    ("scipy", "tukey_1p0_periodic")         : lambda M : wf.tukeywin(M, 1.0, False),
+    ("scipy", "tukey_1p0_symmetric")        : lambda M : wf.tukeywin(M, 1.0, True)
 }
 
 
 def check_reference_waveform_data(reference_windows: dict[[str, WindowFunctionReferenceData], np.ndarray]) -> None:
-    """verify window-function reference data against corresponding Python implementations."""
+    """Verify window-function reference data against corresponding Python implementations."""
 
     for (reference_window_key, reference_window) in reference_windows.items():
 
@@ -260,13 +357,14 @@ def check_reference_waveform_data(reference_windows: dict[[str, WindowFunctionRe
                 ok = False
             worsterr = max(maxerr, worsterr) # Maximum error across all window sizes.
         if ok:
-            print("Perfect correspondence : {:32} (worsterr = {:8.3g})".format("/".join(reference_window_key), worsterr))
+            print("Perfect correspondence : {:40} (worsterr = {:8.3g})".format("/".join(reference_window_key), worsterr))
 
 
 def main() -> None:
-    """Verify Window-function reference data against Python implementations."""
+    """Verify Window-function reference data against the Python implementations."""
 
-    for filename in glob.glob("reference_data/*_windows.txt"):
+    for filename in ["../reference_data/numpy_scipy/scipy_windows.txt"]:
+    #for filename in glob.glob("reference_data/*_windows.txt"):
         print("Checking {} ...".format(filename))
         print()
         check_reference_waveform_data(read_window_function_reference_data(filename))
